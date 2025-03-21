@@ -1,0 +1,122 @@
+  /* General styles */
+  html {
+    text-align: center;
+    height: 100%;
+    background-color: #5d8dfd;
+    font-family: "Jersey25-Regular", sans-serif;
+  }
+
+  /* Custom Font */
+  @font-face {
+    font-family: "Jersey25-Regular"; 
+    src: url(Jersey25-Regular.ttf);
+  }
+
+  /* Title */
+  .title {
+    font-size: 76px;
+    text-shadow: 4px 4px #000000, -4px -4px #000000, 4px -4px #000000, -4px 4px #000000;
+    color: #004cff;
+     animation: shake 5s infinite;
+  } 
+
+
+
+  /* Navbar */
+  .navbar {
+    overflow: hidden;
+    background-color: black;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    
+  }
+
+  .navbar a {
+    float: left;
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 17px;
+    transition: transform 0.2s ease-in-out, background 0.2s;
+  }
+
+  .navbar a:hover {
+    background: white;
+    color: #5289ff;
+    transform: scale(1.1);
+  }
+
+  /* Buttons */
+  button {
+    cursor: pointer;
+    background-color: #004cff;
+    border: 4px solid black;
+    padding: 15px 32px;
+    text-align: center;
+    font-size: 23px;
+    font-family: "Jersey25-Regular", sans-serif;
+    margin: 10px;
+    transition: transform 0.2s ease-in-out, background 0.2s; 
+    
+  }
+
+  button:hover {
+    box-shadow: 0 0 10px #5289ff;
+    background-color: #5289ff;
+    transform: scale(1.1);
+  }
+
+button:active {
+  transform: scale(0.95);
+}
+
+
+  /* Footer */
+  footer {
+    position: bottem;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    padding: 3px;
+    background-color: #004cff;
+    color: white;
+    
+  }
+
+  /* Logo Icon */
+  .icon {
+    cursor: not-allowed;
+    float: left;
+    width: 60px;
+    height: auto;
+    transition: transform 0.2s ease-in-out;
+  }
+
+  .icon:hover {
+    transform: scale(1.1);
+    animation: shake 0.5s infinite;
+  }
+
+  /* Shake Animation */
+  @keyframes shake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    10% { transform: translate(-1px, -2px) rotate(-1deg); }
+    20% { transform: translate(-3px, 0px) rotate(1deg); }
+    30% { transform: translate(3px, 2px) rotate(0deg); }
+    40% { transform: translate(1px, -1px) rotate(1deg); }
+    50% { transform: translate(-1px, 2px) rotate(-1deg); }
+    60% { transform: translate(-3px, 1px) rotate(0deg); }
+    70% { transform: translate(3px, 1px) rotate(-1deg); }
+    80% { transform: translate(-1px, -1px) rotate(1deg); }
+    90% { transform: translate(1px, 2px) rotate(0deg); }
+    100% { transform: translate(1px, -2px) rotate(-1deg); }
+  }
+
+.error{
+  width: 100%;
+  height: 100%;
+}
