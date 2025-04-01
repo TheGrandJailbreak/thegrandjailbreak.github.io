@@ -7,16 +7,13 @@
   }
   
   /* Custom Font */
-  .jersey-25-regular {
-    font-family: "Jersey 25", sans-serif;
+body{    
+  font-family: "Jersey 25", sans-serif;
     font-weight: 400;
     font-style: normal;
   }
   
-@font-face {
-  font-family:Jersey 25 ;
-  src: url(/Jersey25-Regular.ttf);
-}
+
 
   /* Title */
   .title {
