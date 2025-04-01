@@ -215,3 +215,10 @@ img {vertical-align: middle;}
 @media only screen and (max-width: 300px) {
   .prev, .next,.text {font-size: 11px}
 }
+
+.text {
+  font-size: 30px;
+  text-shadow: 4px 4px #000000, -4px -4px #000000, 4px -4px #000000, -4px 4px #000000;
+  color: #004cff;
+
+}
