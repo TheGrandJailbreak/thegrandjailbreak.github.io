@@ -9,7 +9,7 @@
   /* Custom Font */
   @font-face {
     font-family: "Jersey25-Regular";
-    src: url("./Jersey25-Regular.ttf") format("truetype");
+    src: url("/fonts/Jersey25-Regular.ttf") format("truetype");
   }
 
   /* Title */
