@@ -13,6 +13,10 @@
     font-style: normal;
   }
   
+@font-face {
+  font-family:Jersey 25 ;
+  src: url(/Jersey25-Regular.ttf);
+}
 
   /* Title */
   .title {
