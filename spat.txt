@@ -1,0 +1,4 @@
+<h1>Hello!</h1>
+<p>Hey there! just wondering uhh how to use that spatial thing??? how do we edit spaces??? do we need to do this? </p>
+
+<img src="/screenshot1.png" width=100% height=auto></img>
