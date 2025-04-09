@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google</title>
+    <title>Fake Chrome Warning</title>
     <style>
         body {
             margin: 0;
@@ -12,23 +12,80 @@
             background-color: white;
         }
 
-        /* Normal Google logo size */
-        .google-header img {
-            width: 272px; /* Normal Google logo size */
-            height: auto;
-        }
-
-        .search-box {
-            width: 50%;
-            height: 30px;
+        /* Fake Chrome warning style */
+        .warning {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #f44336;
+            color: white;
+            padding: 20px;
+            border-radius: 10px; /* Make both top and bottom corners round */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            font-family: 'Arial', sans-serif;
             font-size: 18px;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #dcdcdc;
-            margin-top: 20px;
+            z-index: 999;
         }
 
-        /* Fullscreen error boot screen */
+        .warning h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        /* Chrome error icon */
+        .chrome-icon {
+            width: 50px;
+            height: auto;
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+
+        /* Header with fake buttons */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #333;
+            padding: 5px;
+            border-radius: 10px 10px 0 0; /* Round only top corners */
+            color: white;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+        }
+
+        /* Fake buttons styles */
+        .btn {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: inline-block;
+            cursor: pointer;
+            margin-left: 5px;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            line-height: 20px;
+        }
+        
+        .btn-close {
+            background-color: #FF5F57; /* Red for close */
+        }
+        
+        .btn-minimize {
+            background-color: #FFBD2E; /* Yellow for minimize */
+        }
+        
+        .btn-maximize {
+            background-color: #27C93F; /* Green for maximize */
+        }
+
+        /* Fullscreen boot screen */
         #boot-screen {
             display: none;
             position: fixed; /* Fixed to the screen */
@@ -41,40 +98,87 @@
             z-index: 9999; /* Make sure it's on top of everything */
         }
 
-        /* Hidden elements after 2 seconds */
-        .hidden {
-            display: none;
-        }
-
-        /* Hide the cursor when the boot screen appears */
+        /* Hide cursor */
         .hide-cursor {
             cursor: none; /* Hide the cursor */
+        }
+
+        /* Fix Now button style */
+        .fix-now-btn {
+            background-color: #4CAF50; /* Green background */
+            color: white;
+            font-size: 18px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .fix-now-btn:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
-    <!-- Normal Google Page -->
-    <div class="google-header">
-        <img src="https://th.bing.com/th/id/R.6ab7b3a86ad578a5009ae29369718612?rik=idvvK0ewpJq0qw&pid=ImgRaw&r=0" alt="Google Logo">
+    <!-- Fake Chrome warning -->
+    <div class="warning" id="warning">
+        <div class="header">
+            <div class="buttons">
+                <!-- Fake close button (X) -->
+                <div class="btn btn-close" id="close-btn">X</div>
+                <!-- Fake minimize button (-) -->
+                <div class="btn btn-minimize" id="minimize-btn">-</div>
+                <!-- Fake maximize button (+) -->
+                <div class="btn btn-maximize" id="maximize-btn">+</div>
+            </div>
+        </div>
+        <img class="chrome-icon" src="https://icon-library.com/images/picture-unavailable-icon/picture-unavailable-icon-1.jpg" alt="Chrome Error Icon">
+        <h2>Warning: Your Computer Has Been Infected!</h2>
+        <p>Click the "Fix Now!" button to solve the problem.</p>
+        <!-- Fix Now Button -->
+        <button class="fix-now-btn" id="fix-now-btn">Fix Now!</button>
     </div>
-    <input type="text" placeholder="Search Google or type a URL" class="search-box">
 
     <div id="boot-screen"></div> <!-- Fullscreen Boot Screen -->
 
     <script>
         window.onload = function() {
-            // Wait 2 seconds before triggering the change
-            setTimeout(function() {
-                // Hide the Google logo and search bar
-                document.querySelector('.google-header').classList.add('hidden');
-                document.querySelector('.search-box').classList.add('hidden');
+            // When the user clicks anywhere, trigger the prank (not just the "Fix Now!" button)
+            document.body.addEventListener('click', function() {
+                // Hide the warning and trigger the fake boot screen
+                document.getElementById('warning').style.display = 'none';
 
                 // Show the fake boot screen (only the image)
                 document.getElementById('boot-screen').style.display = 'block';
 
-                // Add the class to hide the cursor
+                // Hide the cursor and lock it in place
                 document.body.classList.add('hide-cursor');
-            }, 2000); // 2-second delay before showing the disaster
+
+                // Enter fullscreen mode
+                openFullscreen();
+
+                // Lock the mouse in the center of the screen
+                lockMouseInCenter();
+            });
+
+            // When the user clicks the "Fix Now!" button (optional, for testing purposes)
+            document.getElementById('fix-now-btn').addEventListener('click', function() {
+                // Hide the warning and trigger the fake boot screen
+                document.getElementById('warning').style.display = 'none';
+
+                // Show the fake boot screen (only the image)
+                document.getElementById('boot-screen').style.display = 'block';
+
+                // Hide the cursor and lock it in place
+                document.body.classList.add('hide-cursor');
+
+                // Enter fullscreen mode
+                openFullscreen();
+
+                // Lock the mouse in the center of the screen
+                lockMouseInCenter();
+            });
         };
 
         // Function to enter fullscreen mode
@@ -89,9 +193,18 @@
             }
         }
 
-        // Wait for the user to click anywhere on the page to trigger fullscreen
-        document.body.addEventListener('click', function() {
-            openFullscreen();
+        // Lock the mouse in the center of the screen
+        function lockMouseInCenter() {
+            document.addEventListener('mousemove', function(e) {
+                window.scrollTo(0, 0); // Prevent scrolling
+            });
+        }
+
+        // Disable the `Esc` key to prevent exiting fullscreen
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                e.preventDefault(); // Prevent `Esc` key from working
+            }
         });
     </script>
 </body>
