@@ -6,13 +6,13 @@
     <title>Google</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: white;
             margin: 0;
             padding: 0;
+            overflow: hidden;
+            background-color: white;
         }
 
+        /* Google logo style - normal size */
         .google-header img {
             width: 272px; /* Normal Google logo size */
             height: auto;
@@ -28,78 +28,43 @@
             margin-top: 20px;
         }
 
-        .fake-error {
-            background: #f2f2f2;
-            border: 2px solid #e10000;
-            padding: 10px;
-            color: red;
-            width: 70%;
-            margin: 10px auto;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .fake-error h2 {
-            font-size: 20px;
-            margin: 0;
-        }
-
+        /* Fullscreen error boot screen */
         #boot-screen {
             display: none;
-            background: #000;
-            color: #00ff00;
-            text-align: center;
-            padding: 50px;
-            font-family: 'Courier New', monospace;
-            position: absolute;
+            position: fixed; /* Fixed to the screen */
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            box-sizing: border-box;
+            background: url('/ERROR.png') no-repeat center center;
+            background-size: cover; /* Ensure the image fills the entire screen */
+            z-index: 9999; /* Make sure it's on top of everything */
         }
     </style>
 </head>
 <body>
-    <!-- Fake Google Page -->
+    <!-- Normal Google Page (with normal sized logo) -->
     <div class="google-header">
         <img src="https://th.bing.com/th/id/R.6ab7b3a86ad578a5009ae29369718612?rik=idvvK0ewpJq0qw&pid=ImgRaw&r=0" alt="Google Logo">
     </div>
     <input type="text" placeholder="Search Google or type a URL" class="search-box">
 
-    <!-- Fake Boot Screen (hidden initially) -->
-    <div id="boot-screen">
-        <p><strong>WINDOWS ERROR</strong></p>
-        <p><strong>BOOT FAILURE - SYSTEM ERROR DETECTED!</strong></p>
-        <div class="fake-error">
-            <h2>Critical Error: 0x000000F4</h2>
-            <p>The application failed to start. Your files may be corrupted.</p>
-        </div>
-        <div class="fake-error">
-            <h2>Fatal System Error</h2>
-            <p>System crash detected. Please restart your computer immediately.</p>
-        </div>
-        <div class="fake-error">
-            <h2>Warning: Virus Detected</h2>
-            <p>Your system is at risk. Please disconnect from the internet immediately.</p>
-        </div>
-        <div class="fake-error">
-            <h2>Runtime Error: 0x800704C8</h2>
-            <p>The program is no longer responding. The system will shut down in 5 seconds.</p>
-        </div>
-    </div>
+    <div id="boot-screen"></div> <!-- Fullscreen Boot Screen -->
 
     <script>
-        // Go full screen on page load
         window.onload = function() {
-            document.documentElement.requestFullscreen(); // Fullscreen mode
+            // Request fullscreen mode (F11-like)
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            }
 
-            // After a 2-second delay, switch to the fake boot screen
+            // After 2 seconds, hide the Google content and show the fake boot screen
             setTimeout(function() {
-                // Hide the Google page and show the fake boot screen
-                document.body.innerHTML = document.getElementById('boot-screen').outerHTML;
-            }, 2000); // Change this time to adjust when the boot screen shows up (set to 2 seconds)
+                // Hide all visible content (Google logo and search box)
+                document.body.innerHTML = ''; // This removes the Google logo and search box
+                // Show the fake boot screen (only the image)
+                document.getElementById('boot-screen').style.display = 'block';
+            }, 2000); // 2-second delay before showing the disaster
         };
     </script>
 </body>
