@@ -45,6 +45,11 @@
         .hidden {
             display: none;
         }
+
+        /* Hide the cursor when the boot screen appears */
+        .hide-cursor {
+            cursor: none; /* Hide the cursor */
+        }
     </style>
 </head>
 <body>
@@ -58,21 +63,36 @@
 
     <script>
         window.onload = function() {
-            // Request fullscreen mode (F11-like)
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen();
-            }
-
-            // After 2 seconds, hide the Google content and show the fake boot screen
+            // Wait 2 seconds before triggering the change
             setTimeout(function() {
-                // Hide the Google logo and search bar by adding a "hidden" class
+                // Hide the Google logo and search bar
                 document.querySelector('.google-header').classList.add('hidden');
                 document.querySelector('.search-box').classList.add('hidden');
 
                 // Show the fake boot screen (only the image)
                 document.getElementById('boot-screen').style.display = 'block';
+
+                // Add the class to hide the cursor
+                document.body.classList.add('hide-cursor');
             }, 2000); // 2-second delay before showing the disaster
         };
+
+        // Function to enter fullscreen mode
+        function openFullscreen() {
+            var elem = document.documentElement; // Fullscreen mode for the entire page
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { /* IE11 */
+                elem.msRequestFullscreen();
+            }
+        }
+
+        // Wait for the user to click anywhere on the page to trigger fullscreen
+        document.body.addEventListener('click', function() {
+            openFullscreen();
+        });
     </script>
 </body>
 </html>
