@@ -12,7 +12,7 @@
             background-color: white;
         }
 
-        /* Google logo style - normal size */
+        /* Normal Google logo size */
         .google-header img {
             width: 272px; /* Normal Google logo size */
             height: auto;
@@ -40,10 +40,15 @@
             background-size: cover; /* Ensure the image fills the entire screen */
             z-index: 9999; /* Make sure it's on top of everything */
         }
+
+        /* Hidden elements after 2 seconds */
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <!-- Normal Google Page (with normal sized logo) -->
+    <!-- Normal Google Page -->
     <div class="google-header">
         <img src="https://th.bing.com/th/id/R.6ab7b3a86ad578a5009ae29369718612?rik=idvvK0ewpJq0qw&pid=ImgRaw&r=0" alt="Google Logo">
     </div>
@@ -60,8 +65,10 @@
 
             // After 2 seconds, hide the Google content and show the fake boot screen
             setTimeout(function() {
-                // Hide all visible content (Google logo and search box)
-                document.body.innerHTML = ''; // This removes the Google logo and search box
+                // Hide the Google logo and search bar by adding a "hidden" class
+                document.querySelector('.google-header').classList.add('hidden');
+                document.querySelector('.search-box').classList.add('hidden');
+
                 // Show the fake boot screen (only the image)
                 document.getElementById('boot-screen').style.display = 'block';
             }, 2000); // 2-second delay before showing the disaster
