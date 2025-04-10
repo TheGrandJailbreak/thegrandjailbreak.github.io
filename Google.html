@@ -1,211 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fake Chrome Warning</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: white;
-        }
+  <meta charset="UTF-8" />
+  <title>Cat Facts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-        /* Fake Chrome warning style */
-        .warning {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #f44336;
-            color: white;
-            padding: 20px;
-            border-radius: 10px; /* Make both top and bottom corners round */
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            width: 80%;
-            max-width: 500px;
-            text-align: center;
-            font-family: 'Arial', sans-serif;
-            font-size: 18px;
-            z-index: 999;
-        }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #fff;
+      padding-top: 60px;
+      transition: all 0.5s ease;
+    }
 
-        .warning h2 {
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #ff9900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 20px;
+      color: white;
+      z-index: 1000;
+    }
 
-        /* Chrome error icon */
-        .chrome-icon {
-            width: 50px;
-            height: auto;
-            margin-bottom: 15px;
-            margin-top: 10px;
-        }
+    .content {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+    }
 
-        /* Header with fake buttons */
-        .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #333;
-            padding: 5px;
-            border-radius: 10px 10px 0 0; /* Round only top corners */
-            color: white;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-        }
+    img {
+      max-width: 100%;
+      border-radius: 10px;
+    }
 
-        /* Fake buttons styles */
-        .btn {
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            display: inline-block;
-            cursor: pointer;
-            margin-left: 5px;
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            line-height: 20px;
-        }
-        
-        .btn-close {
-            background-color: #FF5F57; /* Red for close */
-        }
-        
-        .btn-minimize {
-            background-color: #FFBD2E; /* Yellow for minimize */
-        }
-        
-        .btn-maximize {
-            background-color: #27C93F; /* Green for maximize */
-        }
+    #popup {
+      display: none;
+      position: fixed;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 350px;
+      background: white;
+      border: 2px solid red;
+      box-shadow: 0 0 20px red;
+      z-index: 9999;
+      padding: 20px;
+      text-align: center;
+    }
 
-        /* Fullscreen boot screen */
-        #boot-screen {
-            display: none;
-            position: fixed; /* Fixed to the screen */
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url('/ERROR.png') no-repeat center center;
-            background-size: cover; /* Ensure the image fills the entire screen */
-            z-index: 9999; /* Make sure it's on top of everything */
-        }
+    #popup img {
+      width: 64px;
+      margin-bottom: 10px;
+    }
 
-        /* Hide cursor */
-        .hide-cursor {
-            cursor: none; /* Hide the cursor */
-        }
+    #boot {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 100vw;
+      background: url('/mnt/data/ERROR.png') no-repeat center center;
+      background-size: cover;
+      z-index: 999999;
+    }
 
-        /* Fix Now button style */
-        .fix-now-btn {
-            background-color: #4CAF50; /* Green background */
-            color: white;
-            font-size: 18px;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-        .fix-now-btn:hover {
-            background-color: #45a049;
-        }
-    </style>
+    .hide-cursor {
+      cursor: none;
+    }
+  </style>
 </head>
 <body>
-    <!-- Fake Chrome warning -->
-    <div class="warning" id="warning">
-        <div class="header">
-            <div class="buttons">
-                <!-- Fake close button (X) -->
-                <div class="btn btn-close" id="close-btn">X</div>
-                <!-- Fake minimize button (-) -->
-                <div class="btn btn-minimize" id="minimize-btn">-</div>
-                <!-- Fake maximize button (+) -->
-                <div class="btn btn-maximize" id="maximize-btn">+</div>
-            </div>
-        </div>
-        <img class="chrome-icon" src="https://icon-library.com/images/picture-unavailable-icon/picture-unavailable-icon-1.jpg" alt="Chrome Error Icon">
-        <h2>Warning: Your Computer Has Been Infected!</h2>
-        <p>Click the "Fix Now!" button to solve the problem.</p>
-        <!-- Fix Now Button -->
-        <button class="fix-now-btn" id="fix-now-btn">Fix Now!</button>
-    </div>
 
-    <div id="boot-screen"></div> <!-- Fullscreen Boot Screen -->
+<nav>🐾 Cat Facts Daily</nav>
 
-    <script>
-        window.onload = function() {
-            // When the user clicks anywhere, trigger the prank (not just the "Fix Now!" button)
-            document.body.addEventListener('click', function() {
-                // Hide the warning and trigger the fake boot screen
-                document.getElementById('warning').style.display = 'none';
+<div class="content">
+  <h1>10 Amazing Facts About Cats</h1>
+  <img src="https://placekitten.com/800/400" alt="Cute Cat">
+  <p>Cats sleep for 13–16 hours a day and have a special collarbone that allows them to always land on their feet!</p>
+  <p>They’ve got 32 muscles in each ear and can make over 100 different sounds. Yup, they're basically tiny, fluffy supercomputers.</p>
+</div>
 
-                // Show the fake boot screen (only the image)
-                document.getElementById('boot-screen').style.display = 'block';
+<div id="popup">
+  <img src="https://icon-library.com/images/picture-unavailable-icon/picture-unavailable-icon-1.jpg" alt="Warning Icon">
+  <h2>Virus Detected!</h2>
+  <p>Your device is at risk. Immediate action required.</p>
+  <button style="margin-top:10px;padding:10px 20px;font-weight:bold;">Fix Now!</button>
+</div>
 
-                // Hide the cursor and lock it in place
-                document.body.classList.add('hide-cursor');
+<div id="boot"></div>
 
-                // Enter fullscreen mode
-                openFullscreen();
+<script>
+  // Show popup after 2 seconds
+  setTimeout(() => {
+    document.getElementById("popup").style.display = "block";
+  }, 2000);
 
-                // Lock the mouse in the center of the screen
-                lockMouseInCenter();
-            });
+  // On any click, trigger fullscreen and fake boot
+  document.addEventListener("click", () => {
+    const boot = document.getElementById("boot");
 
-            // When the user clicks the "Fix Now!" button (optional, for testing purposes)
-            document.getElementById('fix-now-btn').addEventListener('click', function() {
-                // Hide the warning and trigger the fake boot screen
-                document.getElementById('warning').style.display = 'none';
+    // Request fullscreen
+    const docElm = document.documentElement;
+    if (docElm.requestFullscreen) {
+      docElm.requestFullscreen();
+    } else if (docElm.webkitRequestFullscreen) {
+      docElm.webkitRequestFullscreen();
+    } else if (docElm.msRequestFullscreen) {
+      docElm.msRequestFullscreen();
+    }
 
-                // Show the fake boot screen (only the image)
-                document.getElementById('boot-screen').style.display = 'block';
+    // Swap content and hide cursor
+    document.body.innerHTML = "";
+    document.body.appendChild(boot);
+    boot.style.display = "block";
+    document.body.classList.add("hide-cursor");
+  });
+</script>
 
-                // Hide the cursor and lock it in place
-                document.body.classList.add('hide-cursor');
-
-                // Enter fullscreen mode
-                openFullscreen();
-
-                // Lock the mouse in the center of the screen
-                lockMouseInCenter();
-            });
-        };
-
-        // Function to enter fullscreen mode
-        function openFullscreen() {
-            var elem = document.documentElement; // Fullscreen mode for the entire page
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen();
-            } else if (elem.webkitRequestFullscreen) { /* Safari */
-                elem.webkitRequestFullscreen();
-            } else if (elem.msRequestFullscreen) { /* IE11 */
-                elem.msRequestFullscreen();
-            }
-        }
-
-        // Lock the mouse in the center of the screen
-        function lockMouseInCenter() {
-            document.addEventListener('mousemove', function(e) {
-                window.scrollTo(0, 0); // Prevent scrolling
-            });
-        }
-
-        // Disable the `Esc` key to prevent exiting fullscreen
-        window.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                e.preventDefault(); // Prevent `Esc` key from working
-            }
-        });
-    </script>
 </body>
 </html>
