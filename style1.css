@@ -91,7 +91,6 @@ button:active {
 
   /* Logo Icon */
   .icon {
-    cursor: not-allowed;
     float: left;
     width: 60px;
     height: auto;
