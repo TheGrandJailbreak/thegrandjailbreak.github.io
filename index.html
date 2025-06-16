@@ -15,7 +15,6 @@
   
   <title>The Grand Jailbreak</title>
 
-  <!-- Fixed: Only need one stylesheet link for "style.css" -->
   <link rel="stylesheet" href="style1.css" type="text/css" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,14 +37,17 @@
     <h1 class="title">The Grand Jailbreak</h1>
 
 <div id="google_translate_element"></div>
-<script> 
-function googleTranslateElementInit() {
-  new google.translate.TranslateElement({
-    pageLanguage: 'en'
-  }, 'google_translate_element');
-}
-</script>
-<script src="http://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script> 
+
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement(
+          { pageLanguage: 'en' },
+          'google_translate_element'
+        );
+      }
+    </script>
+
+    <script src="http://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     
 
 
