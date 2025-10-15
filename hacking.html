@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>INDCTRL: Remote Access Console</title>
+
+  <!-- Intentionally-unreliable favicon (album page, not direct image) -->
+  <link rel="icon" href="https://imgur.com/a/2fIQZQc" type="image/png">
+  <link rel="apple-touch-icon" href="https://imgur.com/a/2fIQZQc">
+
+  <!-- DELIBERATELY RESTRICTIVE CSP: NO SCRIPTS CAN RUN -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https:; style-src 'self' 'unsafe-inline'; script-src 'none'; connect-src 'none'">
+
+  <style>
+    :root{
+      --bg:#071017;
+      --panel:#0b1419;
+      --accent:#2fe6c4;
+      --danger:#ff6b6b;
+      --muted:#8b98a3;
+      --mono:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#050608 0%,#071017 100%);color:var(--accent);font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial}
+    .wrap{display:flex;gap:18px;height:100%;padding:28px}
+    .left{
+      width:320px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.03);border-radius:8px;padding:18px;
+    }
+    .main{
+      flex:1;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.02));
+      border:1px solid rgba(255,255,255,0.03);border-radius:8px;padding:18px;display:flex;flex-direction:column;
+    }
+    h1{margin:0;font-size:18px}
+    .sub{color:var(--muted);font-size:12px;margin-top:6px}
+    .panel{background:var(--panel);border-radius:6px;padding:12px;margin-top:12px;color:var(--accent);font-family:var(--mono);font-size:13px;line-height:1.45}
+    .btn{display:inline-block;padding:10px 12px;border-radius:6px;margin-right:8px;background:transparent;border:1px solid rgba(255,255,255,0.06);cursor:pointer;color:var(--accent);font-family:var(--mono);font-size:13px}
+    .btn.danger{border-color:rgba(255,90,90,0.2);color:var(--danger)}
+    .status{margin-top:10px;padding:8px;border-radius:6px;background:rgba(0,0,0,0.18);color:var(--muted);font-size:13px}
+    .console{
+      margin-top:12px;background:#000;padding:14px;border-radius:6px;color:#7cffd9;font-family:var(--mono);font-size:13px;height:320px;overflow:auto;border:1px solid rgba(255,255,255,0.02)
+    }
+    .console .err{color:#ff8f8f}
+    .footer{margin-top:auto;padding-top:12px;color:var(--muted);font-size:12px}
+    /* fake terminal caret */
+    .caret::after{content:" ▮";animation:blink 1s steps(1) infinite}
+    @keyframes blink{50%{opacity:0}}
+    /* disabled-looking fields */
+    input[disabled], button[disabled]{opacity:0.6;cursor:not-allowed}
+    .lock {display:inline-block;padding:4px 8px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:12px;color:var(--muted);margin-left:6px}
+    .big{font-size:13px}
+    /* warning banner */
+    .warn{background:linear-gradient(90deg,#3a1b00,#632300);padding:10px;border-radius:6px;color:#ffd7b5;margin-top:10px;font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="wrap" role="main" aria-label="Industrial Remote Access Console">
+    <aside class="left" aria-label="sidebar">
+      <h1>INDCTRL - RMT</h1>
+      <div class="sub">Industrial Control — Remote Maintenance Console</div>
+
+      <div class="panel" style="margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>NODE</strong><div class="sub" style="margin-top:4px">Sector • 07 / ValveFarm</div></div>
+          <div class="lock">LOCKED</div>
+        </div>
+
+        <div class="status">Connection: <strong>LINK DETECTED</strong> · Latency: <strong>— ms</strong></div>
+
+        <div style="margin-top:12px">
+          <button class="btn" id="scanBtn">SCAN NETWORK</button>
+          <button class="btn" id="injectBtn">INJECT PATCH</button>
+          <button class="btn danger" id="overrideBtn">FORCE OVERRIDE</button>
+        </div>
+
+        <div class="warn">ALERT: Scripts are restricted by system policy. Operational commands disabled.</div>
+      </div>
+
+      <div class="panel" style="margin-top:12px;">
+        <div class="sub">Active Sessions</div>
+        <ul style="padding-left:16px;margin:10px 0 0 0;color:var(--accent)">
+          <li class="small">MAINT-237 — Idle</li>
+          <li class="small">RM-SEC — Quarantined</li>
+          <li class="small">OP-44 — Restricted</li>
+        </ul>
+      </div>
+
+    <!--  <div class="footer">Icon source: <span style="color:var(--muted)">https://imgur.com/a/2fIQZQc</span></div> -->
+    </aside>
+
+    <section class="main">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <h1 style="font-size:20px;margin:0">REMOTE CONTROL | SECTOR 07</h1>
+            <div class="sub">Operator Console • Industrial Systems v4.9</div>
+          </div>
+          <div class="sub" style="margin-top:6px">LAST BOOT: 2025-10-14 09:02:41 UTC</div>
+        </div>
+
+        <div style="text-align:right">
+          <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">ACCESS LEVEL: GUEST</div>
+          <div style="margin-top:6px"><span class="lock">NO WRITE</span></div>
+        </div>
+      </div>
+
+      <div class="panel big" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>COMMAND</div>
+          <div style="color:var(--muted);font-size:12px">status: <strong style="color:#ffd080">DEGRADED</strong></div>
+        </div>
+
+        <!-- Inputs that would normally trigger JS; they are inert due to CSP -->
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+          <input disabled placeholder="ENTER TARGET ID" style="background:#021214;border:1px solid rgba(255,255,255,0.02);padding:8px;border-radius:6px;color:var(--accent);font-family:var(--mono);flex:1">
+          <button class="btn" disabled>CONNECT</button>
+        </div>
+
+        <div style="margin-top:12px" class="sub">Quick Actions (hover only)</div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button class="btn">VIEW TOPOLOGY</button>
+          <button class="btn">EXPORT LOGS</button>
+          <button class="btn danger">REMOTE WIPE</button>
+        </div>
+
+        <div class="console" id="consoleArea">
+          <!-- This console is intentionally static; scripting disabled by CSP -->
+          <div>00:00:00 - BOOT SEQUENCE INIT</div>
+          <div>00:00:01 - LOADING MODULE: core_routing</div>
+          <div>00:00:01 - LOADING MODULE: valve_control</div>
+          <div>00:00:02 - AUTH LEVEL: GUEST</div>
+          <div>00:00:03 - POLICIES: SCRIPT_EXECUTION = DENIED</div>
+          <div class="err">00:00:04 - ERROR: Script execution blocked by policy. See system policy 0xC143E.</div>
+          <div class="err">00:00:04 - WARNING: Attempt to initialize remote injector aborted.</div>
+          <div>00:00:05 - NETWORK: 192.168.7.0/24 (partial)</div>
+          <div class="err">00:00:05 - FAIL: KEYSTORE UNAVAILABLE — ABORTING SENSITIVE OPS</div>
+          <div>00:00:06 - UI: Control elements in read-only mode.</div>
+          <div style="margin-top:8px;color:var(--muted)">Console is in read-only mode because client-side scripts are disabled by policy.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:12px">
+        <div style="flex:1" class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>Patch Status</div>
+            <div class="sub">v4.9.3</div>
+          </div>
+          <div style="margin-top:8px;color:var(--muted)">No writable session. Patch utility offline.</div>
+        </div>
+
+        <div style="width:260px" class="panel">
+          <div>Security</div>
+          <div style="margin-top:8px;color:var(--muted)">Sandboxed · JS Execution: <strong style="color:#ffd080">DISABLED</strong></div>
+          <div style="margin-top:8px;color:var(--danger)">Attempting to enable scripts will be logged and blocked.</div>
+        </div>
+      </div>
+
+<!--      <div class="footer">This is a visual mockup intended for demonstration. Nothing here will perform network operations. If you expected interactive controls, they are disabled by policy.</div>
+-->    </section>
+  </div>
+
+  <!--
+    Note: The page intentionally contains no operational scripts.
+    The Content-Security-Policy meta tag above blocks script execution (script-src 'none').
+    Buttons and interactive elements are therefore inert — deliberate 'not working' behavior.
+  -->
+</body>
+</html>
