@@ -98,7 +98,7 @@
       <div class="menu-item" data-action="schedule">Schedule Task</div>
       <div class="menu-item" data-action="alerts">Alerts Center</div>
 
-      <div class="menu-cat">PRANK CONTROLS</div>
+      <div class="menu-cat">CONTROLS</div>
       <div style="margin-top:8px">
         <label for="discordId">Discord ID</label>
         <input id="discordId" type="text" placeholder="Enter Discord numeric ID">
@@ -168,7 +168,7 @@
       </div>
 
       <footer style="margin-top:12px;color:var(--muted);font-size:12px">
-        <span style="opacity:0.9">For pranks only — this is a client-side mock interface; no real account lookups, scans, or network operations take place.</span>
+        <span style="opacity:0.9">Console for authorised personnel only.</span>
       </footer>
     </section>
   </div>
@@ -223,8 +223,8 @@
           const act = item.getAttribute('data-action');
           switch(act) {
             case 'scan':
-              log('Launching local fake scan...');
-              showModal('Network Scan', 'Scan is local and fake. Generating results...', [{ label:'OK', onClick: ()=> log('Scan complete — hosts found: HOST-A, HOST-B .') }]);
+              log('Launching local scan...');
+              showModal('Network Scan', 'Scanning... Generating results...', [{ label:'OK', onClick: ()=> log('Scan complete — hosts found: HOST-A, HOST-B .') }]);
               break;
             case 'topo':
               showModal('Topology', 'Rendered topology .', [{ label:'Close' }]);
@@ -247,10 +247,10 @@
               showModal('Force Override', 'Override attempted. System remains protected.', [{ label:'Acknowledge', onClick: ()=> log('Override blocked (sim).') }]);
               break;
             case 'logs':
-              showModal('Export Logs', 'Fake logs generated for copy/paste.', [{ label:'Generate', onClick: ()=> log('Generated fake logs: [LOG...]') }]);
+              showModal('Export Logs', 'Logs generated', [{ label:'Generate', onClick: ()=> log('Generated logs: [LOG...]') }]);
               break;
             case 'users':
-              showModal('User Manager', 'Local fake users: Robloxian_1337, TestUser001', [{ label:'Close' }]);
+              showModal('User Manager', 'Local users: hahapeaches, krixkoraidzz', [{ label:'Close' }]);
               break;
             case 'schedule':
               showModal('Schedule Task', 'Task scheduled .', [{ label:'Create', onClick: ()=> log('Task scheduled .') }]);
