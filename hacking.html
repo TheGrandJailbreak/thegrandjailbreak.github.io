@@ -5,28 +5,27 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>INDCTRL: Remote Access Console</title>
 
-  <!-- Intentionally-unreliable favicon (album page, not direct image) -->
+  <!-- Using your Imgur album URL exactly as provided (may not show as an actual icon in some browsers) 
   <link rel="icon" href="https://imgur.com/a/2fIQZQc" type="image/png">
   <link rel="apple-touch-icon" href="https://imgur.com/a/2fIQZQc">
-
-  <!-- DELIBERATELY RESTRICTIVE CSP: NO SCRIPTS CAN RUN -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https:; style-src 'self' 'unsafe-inline'; script-src 'none'; connect-src 'none'">
-
+-->
   <style>
     :root{
       --bg:#071017;
       --panel:#0b1419;
       --accent:#2fe6c4;
+      --accent2:#7fb3ff;
       --danger:#ff6b6b;
       --muted:#8b98a3;
       --mono:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+      --glass: rgba(255,255,255,0.02);
     }
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;background:linear-gradient(180deg,#050608 0%,#071017 100%);color:var(--accent);font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial}
-    .wrap{display:flex;gap:18px;height:100%;padding:28px}
-    .left{
-      width:320px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));
-      border:1px solid rgba(255,255,255,0.03);border-radius:8px;padding:18px;
+    .wrap{display:flex;gap:18px;height:100%;padding:20px}
+    .sidebar{
+      width:340px;background:linear-gradient(180deg,var(--glass), rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.03);border-radius:8px;padding:16px;overflow:auto;
     }
     .main{
       flex:1;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.02));
@@ -35,108 +34,120 @@
     h1{margin:0;font-size:18px}
     .sub{color:var(--muted);font-size:12px;margin-top:6px}
     .panel{background:var(--panel);border-radius:6px;padding:12px;margin-top:12px;color:var(--accent);font-family:var(--mono);font-size:13px;line-height:1.45}
-    .btn{display:inline-block;padding:10px 12px;border-radius:6px;margin-right:8px;background:transparent;border:1px solid rgba(255,255,255,0.06);cursor:pointer;color:var(--accent);font-family:var(--mono);font-size:13px}
-    .btn.danger{border-color:rgba(255,90,90,0.2);color:var(--danger)}
-    .status{margin-top:10px;padding:8px;border-radius:6px;background:rgba(0,0,0,0.18);color:var(--muted);font-size:13px}
-    .console{
-      margin-top:12px;background:#000;padding:14px;border-radius:6px;color:#7cffd9;font-family:var(--mono);font-size:13px;height:320px;overflow:auto;border:1px solid rgba(255,255,255,0.02)
-    }
-    .console .err{color:#ff8f8f}
-    .footer{margin-top:auto;padding-top:12px;color:var(--muted);font-size:12px}
-    /* fake terminal caret */
-    .caret::after{content:" ▮";animation:blink 1s steps(1) infinite}
-    @keyframes blink{50%{opacity:0}}
-    /* disabled-looking fields */
-    input[disabled], button[disabled]{opacity:0.6;cursor:not-allowed}
-    .lock {display:inline-block;padding:4px 8px;border-radius:4px;background:rgba(255,255,255,0.02);font-size:12px;color:var(--muted);margin-left:6px}
-    .big{font-size:13px}
-    /* warning banner */
-    .warn{background:linear-gradient(90deg,#3a1b00,#632300);padding:10px;border-radius:6px;color:#ffd7b5;margin-top:10px;font-weight:700}
+    .btn{display:inline-block;padding:8px 10px;border-radius:6px;margin-right:8px;background:transparent;border:1px solid rgba(255,255,255,0.06);cursor:pointer;color:var(--accent);font-family:var(--mono);font-size:13px}
+    .btn.primary{border-color:rgba(127,179,255,0.12);color:var(--accent2)}
+    .menu-item{padding:8px 10px;border-radius:6px;color:var(--accent);display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:6px}
+    .menu-item:hover{background:rgba(255,255,255,0.01)}
+    .menu-cat{color:var(--muted);font-size:12px;margin-top:12px;margin-bottom:6px}
+    .usercard{display:flex;gap:10px;align-items:center}
+    .avatar{width:48px;height:48px;background:linear-gradient(90deg,#243B55,#141E30);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff}
+    .console{margin-top:12px;background:#000;padding:14px;border-radius:6px;color:#7cffd9;font-family:var(--mono);font-size:13px;height:320px;overflow:auto;border:1px solid rgba(255,255,255,0.02)}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999}
+    .modal{background:linear-gradient(180deg,#0d1316,#081014);padding:18px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);width:520px;color:var(--accent);font-family:var(--mono)}
+    .modal h2{margin:0;font-size:16px;color:var(--accent2)}
+    .fake-btn{display:inline-block;padding:8px 10px;border-radius:6px;background:transparent;border:1px solid rgba(255,255,255,0.06);cursor:pointer;color:var(--accent);margin-top:12px}
+    .chip{padding:6px 8px;border-radius:6px;background:rgba(255,255,255,0.02);color:var(--muted);font-size:12px}
+    footer{margin-top:16px;color:var(--muted);font-size:12px}
+    .tag{color:#ffd080}
+    .danger{color:var(--danger)}
+    .ok{color:#7cffd9}
+    input[type="text"]{background:#021214;border:1px solid rgba(255,255,255,0.02);padding:8px;border-radius:6px;color:var(--accent);font-family:var(--mono);width:100%}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    .smallfoot{font-size:11px;color:#9aa6b2;margin-top:10px}
   </style>
 </head>
 <body>
   <div class="wrap" role="main" aria-label="Industrial Remote Access Console">
-    <aside class="left" aria-label="sidebar">
-      <h1>INDCTRL - RMT</h1>
-      <div class="sub">Industrial Control — Remote Maintenance Console</div>
-
-      <div class="panel" style="margin-top:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>NODE</strong><div class="sub" style="margin-top:4px">Sector • 07 / ValveFarm</div></div>
-          <div class="lock">LOCKED</div>
+    <aside class="sidebar" aria-label="sidebar">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h1>INDCTRL</h1>
+          <div class="sub">Remote Access Console</div>
         </div>
-
-        <div class="status">Connection: <strong>LINK DETECTED</strong> · Latency: <strong>— ms</strong></div>
-
-        <div style="margin-top:12px">
-          <button class="btn" id="scanBtn">SCAN NETWORK</button>
-          <button class="btn" id="injectBtn">INJECT PATCH</button>
-          <button class="btn danger" id="overrideBtn">FORCE OVERRIDE</button>
+        <div style="text-align:right">
+          <div class="chip">OP</div>
         </div>
-
-        <div class="warn">ALERT: Scripts are restricted by system policy. Operational commands disabled.</div>
       </div>
 
-      <div class="panel" style="margin-top:12px;">
-        <div class="sub">Active Sessions</div>
-        <ul style="padding-left:16px;margin:10px 0 0 0;color:var(--accent)">
-          <li class="small">MAINT-237 — Idle</li>
-          <li class="small">RM-SEC — Quarantined</li>
-          <li class="small">OP-44 — Restricted</li>
-        </ul>
+      <div class="panel" style="margin-top:12px">
+        <div class="usercard">
+          <div class="avatar">R</div>
+          <div>
+            <div style="font-weight:700">Robloxian_1337</div>
+            <div class="sub">Profile preview</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:6px">
+              Status: <span class="ok">ONLINE</span><br>
+              Level: 42 · Badges: 7
+            </div>
+          </div>
+        </div>
       </div>
 
-    <!--  <div class="footer">Icon source: <span style="color:var(--muted)">https://imgur.com/a/2fIQZQc</span></div> -->
+      <div class="menu-cat">TOOLS</div>
+      <div class="menu-item" data-action="scan">Network Scanner <span class="chip">active</span></div>
+      <div class="menu-item" data-action="topo">Topology Viewer <span class="chip">ui</span></div>
+      <!-- clearly labeled safe replacement of a potentially harmful name -->
+      <div class="menu-item" data-action="stress">Discord Server Stress Test</div>
+      <div class="menu-item" data-action="traffic">Traffic Spike</div>
+      <div class="menu-item" data-action="inject">Inject Patch (dry-run)</div>
+      <div class="menu-item" data-action="override">Force Override</div>
+
+      <div class="menu-cat">MAINTENANCE</div>
+      <div class="menu-item" data-action="logs">Export Logs</div>
+      <div class="menu-item" data-action="users">User Manager</div>
+      <div class="menu-item" data-action="schedule">Schedule Task</div>
+      <div class="menu-item" data-action="alerts">Alerts Center</div>
+
+      <div class="menu-cat">PRANK CONTROLS</div>
+      <div style="margin-top:8px">
+        <label for="discordId">Discord ID</label>
+        <input id="discordId" type="text" placeholder="Enter Discord numeric ID">
+        <button class="btn" id="checkDiscord">Check Discord ID</button>
+      </div>
+
+      <div style="margin-top:12px">
+        <label for="robloxId">Roblox User ID</label>
+        <input id="robloxId" type="text" placeholder="Enter Roblox numeric ID">
+        <button class="btn" id="checkRoblox">Lookup Roblox User</button>
+      </div>
+
+      <footer class="smallfoot">
+        Note: This page is a harmless prank. No real network actions will be performed — everything is local to your browser.
+      </footer>
     </aside>
 
-    <section class="main">
+    <section class="main" aria-live="polite">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="display:flex;align-items:center;gap:12px">
             <h1 style="font-size:20px;margin:0">REMOTE CONTROL | SECTOR 07</h1>
-            <div class="sub">Operator Console • Industrial Systems v4.9</div>
+            <div class="sub">Operator Console</div>
           </div>
           <div class="sub" style="margin-top:6px">LAST BOOT: 2025-10-14 09:02:41 UTC</div>
         </div>
 
         <div style="text-align:right">
           <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">ACCESS LEVEL: GUEST</div>
-          <div style="margin-top:6px"><span class="lock">NO WRITE</span></div>
+          <div style="margin-top:6px"><div class="chip">NO WRITE</div></div>
         </div>
       </div>
 
-      <div class="panel big" style="margin-top:12px">
+      <div class="panel" style="margin-top:12px">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>COMMAND</div>
-          <div style="color:var(--muted);font-size:12px">status: <strong style="color:#ffd080">DEGRADED</strong></div>
+          <div>COMMAND CENTER</div>
+          <div class="sub">status: <strong class="tag">OPERATIONAL</strong></div>
         </div>
 
-        <!-- Inputs that would normally trigger JS; they are inert due to CSP -->
-        <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-          <input disabled placeholder="ENTER TARGET ID" style="background:#021214;border:1px solid rgba(255,255,255,0.02);padding:8px;border-radius:6px;color:var(--accent);font-family:var(--mono);flex:1">
-          <button class="btn" disabled>CONNECT</button>
+        <div style="margin-top:12px">
+          <button class="btn primary" id="btnScan">Start Scan</button>
+          <button class="btn" id="btnTopo">Topology</button>
+          <button class="btn danger" id="btnStress">Run Stress Test</button>
         </div>
 
-        <div style="margin-top:12px" class="sub">Quick Actions (hover only)</div>
-        <div style="margin-top:8px;display:flex;gap:8px">
-          <button class="btn">VIEW TOPOLOGY</button>
-          <button class="btn">EXPORT LOGS</button>
-          <button class="btn danger">REMOTE WIPE</button>
-        </div>
-
-        <div class="console" id="consoleArea">
-          <!-- This console is intentionally static; scripting disabled by CSP -->
+        <div class="console" id="consoleArea" role="log" aria-atomic="false" aria-relevant="additions">
           <div>00:00:00 - BOOT SEQUENCE INIT</div>
           <div>00:00:01 - LOADING MODULE: core_routing</div>
-          <div>00:00:01 - LOADING MODULE: valve_control</div>
           <div>00:00:02 - AUTH LEVEL: GUEST</div>
-          <div>00:00:03 - POLICIES: SCRIPT_EXECUTION = DENIED</div>
-          <div class="err">00:00:04 - ERROR: Script execution blocked by policy. See system policy 0xC143E.</div>
-          <div class="err">00:00:04 - WARNING: Attempt to initialize remote injector aborted.</div>
-          <div>00:00:05 - NETWORK: 192.168.7.0/24 (partial)</div>
-          <div class="err">00:00:05 - FAIL: KEYSTORE UNAVAILABLE — ABORTING SENSITIVE OPS</div>
-          <div>00:00:06 - UI: Control elements in read-only mode.</div>
-          <div style="margin-top:8px;color:var(--muted)">Console is in read-only mode because client-side scripts are disabled by policy.</div>
         </div>
       </div>
 
@@ -146,24 +157,164 @@
             <div>Patch Status</div>
             <div class="sub">v4.9.3</div>
           </div>
-          <div style="margin-top:8px;color:var(--muted)">No writable session. Patch utility offline.</div>
+          <div style="margin-top:8px;color:var(--muted)">No actual patches will be applied. Visual-only behavior.</div>
         </div>
 
         <div style="width:260px" class="panel">
           <div>Security</div>
-          <div style="margin-top:8px;color:var(--muted)">Sandboxed · JS Execution: <strong style="color:#ffd080">DISABLED</strong></div>
-          <div style="margin-top:8px;color:var(--danger)">Attempting to enable scripts will be logged and blocked.</div>
+          <div style="margin-top:8px;color:var(--muted)">JS Execution: ENABLED</div>
+          <div style="margin-top:8px;color:var(--muted)">All operations are local-only and non-networking.</div>
         </div>
       </div>
 
-<!--      <div class="footer">This is a visual mockup intended for demonstration. Nothing here will perform network operations. If you expected interactive controls, they are disabled by policy.</div>
--->    </section>
+      <footer style="margin-top:12px;color:var(--muted);font-size:12px">
+        <span style="opacity:0.9">For pranks only — this is a client-side mock interface; no real account lookups, scans, or network operations take place.</span>
+      </footer>
+    </section>
   </div>
 
-  <!--
-    Note: The page intentionally contains no operational scripts.
-    The Content-Security-Policy meta tag above blocks script execution (script-src 'none').
-    Buttons and interactive elements are therefore inert — deliberate 'not working' behavior.
-  -->
+  <div id="modalRoot" aria-hidden="true"></div>
+
+  <script>
+    (function(){
+      const consoleEl = document.getElementById('consoleArea');
+      const modalRoot = document.getElementById('modalRoot');
+
+      function log(msg, cls) {
+        const d = document.createElement('div');
+        d.textContent = msg;
+        if (cls) d.className = cls;
+        consoleEl.appendChild(d);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+      }
+
+      function showModal(title, bodyHtml, buttons = []) {
+        modalRoot.innerHTML = '';
+        modalRoot.setAttribute('aria-hidden','false');
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop';
+
+        const box = document.createElement('div');
+        box.className = 'modal';
+        box.innerHTML = `<h2>${title}</h2><div style="margin-top:10px;font-size:13px;color:var(--muted)">${bodyHtml}</div>`;
+
+        const btnRow = document.createElement('div');
+        btnRow.style.marginTop = '14px';
+        buttons.forEach(b => {
+          const el = document.createElement('button');
+          el.className = 'fake-btn';
+          el.textContent = b.label;
+          el.onclick = () => {
+            if (b.onClick) b.onClick();
+            modalRoot.innerHTML = '';
+            modalRoot.setAttribute('aria-hidden','true');
+          };
+          btnRow.appendChild(el);
+        });
+        box.appendChild(btnRow);
+        backdrop.appendChild(box);
+        modalRoot.appendChild(backdrop);
+      }
+
+      // Basic menu interactions 
+      document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const act = item.getAttribute('data-action');
+          switch(act) {
+            case 'scan':
+              log('Launching local fake scan...');
+              showModal('Network Scan', 'Scan is local and fake. Generating results...', [{ label:'OK', onClick: ()=> log('Scan complete — hosts found: HOST-A, HOST-B .') }]);
+              break;
+            case 'topo':
+              showModal('Topology', 'Rendered topology .', [{ label:'Close' }]);
+              break;
+            case 'stress':
+              showModal('Discord Server Stress Test', 'You will sent spam messages to a discord server.', [
+                { label:'Low', onClick: ()=> { log('low stress'); animateTraffic('low'); } },
+                { label:'High', onClick: ()=> { log('high stress'); animateTraffic('high'); } },
+                { label:'Cancel' }
+              ]);
+              break;
+            case 'traffic':
+              animateTraffic('medium');
+              log('traffic spike.');
+              break;
+            case 'inject':
+              showModal('Inject Patch', 'Dry-run: no changes will be made.', [{ label:'Dry Run', onClick: ()=> log('Dry-run patch applied (local only).') }]);
+              break;
+            case 'override':
+              showModal('Force Override', 'Override attempted. System remains protected.', [{ label:'Acknowledge', onClick: ()=> log('Override blocked (sim).') }]);
+              break;
+            case 'logs':
+              showModal('Export Logs', 'Fake logs generated for copy/paste.', [{ label:'Generate', onClick: ()=> log('Generated fake logs: [LOG...]') }]);
+              break;
+            case 'users':
+              showModal('User Manager', 'Local fake users: Robloxian_1337, TestUser001', [{ label:'Close' }]);
+              break;
+            case 'schedule':
+              showModal('Schedule Task', 'Task scheduled .', [{ label:'Create', onClick: ()=> log('Task scheduled .') }]);
+              break;
+            case 'alerts':
+              showModal('Alerts Center', 'No active alerts.', [{ label:'Close' }]);
+              break;
+          }
+        });
+      });
+
+      // top buttons
+      document.getElementById('btnScan').addEventListener('click', ()=> document.querySelector('[data-action="scan"]').click());
+      document.getElementById('btnTopo').addEventListener('click', ()=> document.querySelector('[data-action="topo"]').click());
+      document.getElementById('btnStress').addEventListener('click', ()=> document.querySelector('[data-action="stress"]').click());
+
+      // ID checkers (local fake result)
+      document.getElementById('checkDiscord').addEventListener('click', ()=> {
+        const id = document.getElementById('discordId').value.trim();
+        if (!id) { showModal('Discord ID', 'Please enter a numeric Discord ID.'); return; }
+        // basic validation only; no network
+        if (!/^\d{6,}$/.test(id)) {
+          showModal('Discord ID', 'That does not look like a valid numeric Discord ID. (This is only a local check.)', [{ label:'OK' }]);
+          return;
+        }
+        showModal('Discord Lookup', `Discord ID: <strong>${id}</strong><br>Username: <em>Friend#${id.slice(-4)}</em><br>Status: ONLINE `, [{ label:'Close', onClick: ()=> log(`Discord lookup: ${id} — displayed .`) }]);
+      });
+
+      document.getElementById('checkRoblox').addEventListener('click', ()=> {
+        const id = document.getElementById('robloxId').value.trim();
+        if (!id) { showModal('Roblox Lookup', 'Please enter a Roblox ID.'); return; }
+        if (!/^\d{5,}$/.test(id)) {
+          showModal('Roblox Lookup', 'That does not look like a valid Roblox numeric ID. (Local check only.)', [{ label:'OK' }]);
+          return;
+        }
+        // Generate a fake username from the ID for visual effect
+        const fakeName = 'Player' + id.slice(-5);
+        showModal('Roblox Lookup', `Roblox ID: <strong>${id}</strong><br>Username: <em>${fakeName}</em><br>Join Status: Possible `, [{ label:'Close', onClick: ()=> log(`Roblox lookup: ${id} -> ${fakeName} .`) }]);
+      });
+
+      // visual "traffic" animation
+      function animateTraffic(level) {
+        const counts = { low: 6, medium: 14, high: 30 }[level] || 8;
+        let i = 0;
+        const id = setInterval(()=> {
+          if (i++ >= counts) { clearInterval(id); log('Visual traffic sequence complete.'); return; }
+          log(`packet-${('000'+i).slice(-3)} => processed`);
+        }, 120);
+      }
+
+      // initial small message
+      log('Interface ready. All operations are local-only and harmless.');
+
+      // keyboard shortcut: Ctrl+L clears console
+      window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+          consoleEl.innerHTML = '';
+          log('Console cleared.');
+        }
+      });
+
+      // ensure modalRoot is accessible
+      modalRoot.setAttribute('aria-hidden','true');
+    })();
+  </script>
 </body>
 </html>
