@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Fake Terminal — Cinematic</title>
+<style>
+  :root{
+    --bg:#060606;
+    --panel:#040404;
+    --text:#b6f3b6;
+    --muted:#6f8b6f;
+    --accent:#33ff88;
+    --font: "Courier New", Courier, monospace;
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#030303 0%, #050505 100%);font-family:var(--font);color:var(--text)}
+  .container{max-width:1200px;margin:18px auto;padding:18px;display:flex;gap:18px;flex-direction:column;align-items:stretch;}
+  .header{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+  pre.ascii{
+    background:transparent;
+    color:var(--accent);
+    font-size:16px;
+    line-height:1;
+    margin:0;
+    white-space:pre-wrap;
+    text-wrap:balanced;
+    letter-spacing:0px;
+    text-align:left;
+  }
+  .ascii-box{flex:1;min-width:520px;display:flex;align-items:center;justify-content:center}
+  .disclaimer{
+    flex-basis:420px;
+    min-width:320px;
+    background:linear-gradient(180deg, rgba(255,80,80,0.06), rgba(255,80,80,0.03));
+    border:2px solid rgba(255,80,80,0.12);
+    border-radius:8px;
+    padding:14px;
+    color:#fff;
+    font-weight:700;
+    letter-spacing:0.2px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.6);
+  }
+  .disclaimer h1{margin:0 0 8px 0;font-size:18px;color:#ffd2d2}
+  .disclaimer p{margin:0;font-size:13px;color:#ffecec;font-weight:600}
+  .terminal{
+    background:linear-gradient(180deg, rgba(8,8,8,0.98), rgba(5,5,5,0.98));
+    border:1px solid rgba(80,80,80,0.06);
+    box-shadow:0 10px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.02);
+    border-radius:8px;
+    padding:14px;
+    min-height:520px;
+    color:var(--text);
+    font-size:14px;
+    overflow:hidden;
+  }
+  .titlebar{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .dots{display:flex;gap:6px}
+  .dot{width:12px;height:12px;border-radius:50%}
+  .red{background:#ff5f56}
+  .yellow{background:#ffbd2e}
+  .green{background:#27c93f}
+  .viewport{height:420px;overflow:auto;padding:8px;border-radius:4px;background:linear-gradient(180deg, rgba(0,0,0,0.2), transparent);}
+  .line{white-space:pre-wrap;word-break:break-word;font-family:var(--font)}
+  .prompt{color:var(--muted)}
+  .caret{display:inline-block;width:8px}
+  .input-row{display:flex;gap:8px;align-items:flex-start}
+  .cmd-input{
+    background:transparent;border:0;outline:0;color:var(--accent);font-family:var(--font);font-size:14px;
+    flex:1;min-height:18px;line-height:18px;
+  }
+  .hint{color:rgba(150,200,150,0.15);font-size:12px;margin-top:6px}
+  .small{font-size:12px;color:var(--muted)}
+  .muted{color:var(--muted)}
+  .status{margin-top:8px;font-size:13px}
+  .fake-progress{
+    background:rgba(255,255,255,0.03);
+    height:10px;border-radius:6px;margin-top:6px;overflow:hidden;width:320px;
+  }
+  .fake-progress > i{display:block;height:100%;background:linear-gradient(90deg, rgba(51,255,136,0.2), rgba(51,255,136,0.6));width:0%}
+  .kbd{background:rgba(255,255,255,0.02);padding:2px 6px;border-radius:4px;color:var(--muted);font-size:12px;margin-left:6px}
+  @media (max-width:980px){
+    .header{flex-direction:column;align-items:stretch}
+    .ascii-box{min-width:0}
+    .disclaimer{order:2}
+  }
+  @media (max-width:760px){
+    .container{padding:8px}
+    .terminal{min-height:420px}
+    pre.ascii{font-size:11px}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="ascii-box">
+      <pre class="ascii" id="asciiArt" style="font-size:18px; text-align:left;">
+ ________  _____ ______   ________  ________  ________      ___    ___ 
+|\   ____\|\   _ \  _   \|\   ___ \|\   __  \|\   ____\    |\  \  /  /|
+\ \  \___|\ \  \\\__\ \  \ \  \_|\ \ \  \|\  \ \  \___|_   \ \  \/  / /
+ \ \  \    \ \  \\|__| \  \ \  \ \\ \ \  \\\  \ \_____  \   \ \    / / 
+  \ \  \____\ \  \    \ \  \ \  \_\\ \ \  \\\  \|____|\  \   /     \/  
+   \ \_______\ \__\    \ \__\ \_______\ \_______\____\_\  \ /  /\   \  
+    \|_______|\|__|     \|__|\|_______|\|_______|\_________Y__/ /\ __\ 
+                                                \|_________|__|/ \|__| 
+                                                                       </pre>
+    </div>
+
+    <div class="disclaimer" role="note" aria-live="polite">
+      <h1>CMDosX Console</h1>
+    </div>
+  </div>
+
+  <div class="terminal" role="region" aria-label="Fake terminal">
+    <div class="titlebar">
+      <div class="dots">
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+        <div class="dot green"></div>
+      </div>
+      <div style="flex:1"></div>
+      <div class="small muted">Fake-Terminal v1.0</div>
+    </div>
+
+    <div class="viewport" id="viewport" tabindex="0">
+      <div class="line muted">Welcome, operator. This terminal runs cinematic commands for show.</div>
+      <div class="line muted">Type <span class="kbd">help</span> to see available commands.</div>
+      <div style="height:10px"></div>
+    </div>
+
+    <div style="display:flex;align-items:center;margin-top:10px;gap:8px">
+      <div class="prompt muted">operator@arcadia:~$</div>
+      <input id="cmd" class="cmd-input" autocomplete="off" spellcheck="false" aria-label="Terminal input" />
+      <div class="kbd">Enter</div>
+    </div>
+    <div class="hint">Use ↑ / ↓ to cycle history. Example: <span class="kbd">get_userid DebugGuru#1234</span></div>
+    <div class="status" id="status"></div>
+  </div>
+</div>
+
+<script>
+(async function(){
+  const viewport = document.getElementById('viewport');
+  const input = document.getElementById('cmd');
+  const status = document.getElementById('status');
+
+  const commands = {
+    help: {
+      desc: 'Show available commands',
+      fn: async (args)=> {
+        printLine('Available commands:');
+        printLine('  help                - show this list');
+        printLine('  ls                  - directory listing');
+        printLine('  uname -a            - kernel/info');
+        printLine('  sudo apt update     - package update animation');
+        printLine('  tail -f /var/log    - live log stream (press Enter to stop)');
+        printLine('  get_userid <name#tag> - generate a Discord-style id for a name');
+        printLine('  simulate-hack <target> - cinematic, harmless sequence');
+        printLine('  clear               - clear terminal');
+      }
+    },
+    ls: {
+      desc: 'List files',
+      fn: async (args)=> {
+        printLine('README.md');
+        printLine('secrets.bin');
+        printLine('shards/');
+        printLine('neon.conf');
+      }
+    },
+    'uname': {
+      desc: 'system info',
+      fn: async (args)=> {
+        if (args[0]==='-a') {
+          printLine('Linux ARC-OP 5.12.14-sim #1 SMP Fri Oct 31 02:14:48 UTC 2025 x86_64 GNU/Linux');
+        } else {
+          printLine('Linux');
+        }
+      }
+    },
+    'sudo': {
+      desc: 'simulate sudo commands',
+      fn: async (args)=> {
+        const rest = args.join(' ');
+        if (rest.startsWith('apt update')) {
+          await simulateProgress('Updating package lists', 1400);
+          printLine('Reading package lists... Done');
+          printLine('Building dependency tree... Done');
+        } else if (rest.startsWith('apt install')) {
+          await simulateProgress('Installing packages', 1800);
+          printLine('Installation complete.');
+        } else {
+          printLine('sudo: ' + rest);
+        }
+      }
+    },
+    'tail': {
+      desc: 'tail -f',
+      fn: async (args)=> {
+        printLine('--- live logs (press Enter to stop) ---');
+        let stop = false;
+        function onKey(e){
+          if (e.key === 'Enter') stop = true;
+        }
+        window.addEventListener('keydown', onKey);
+        const samples = [
+          '[2025-10-31 02:12:03] neon-agent[5892]: sync started -> shard A3',
+          '[2025-10-31 02:12:11] neon-agent[5892]: shard A3 -> peer 10.12.99.77 accepted',
+          '[2025-10-31 02:13:00] neon-agent[5892]: integrity check passed (100%)',
+          '[2025-10-31 02:14:41] neon-agent[5892]: warning: unusual handshake pattern from 10.12.99.77',
+          '[2025-10-31 02:14:47] neon-agent[5892]: spawn: unknown process \'eyestalk\'',
+          '[ALERT] neon-agent: eyestalk spawned -> escalating to operator'
+        ];
+        let i=0;
+        while(!stop && i<100){
+          printLine(samples[i % samples.length]);
+          await wait(700 + Math.random()*400);
+          i++;
+          viewport.scrollTop = viewport.scrollHeight;
+        }
+        window.removeEventListener('keydown', onKey);
+        printLine('--- tail stopped ---');
+      }
+    },
+    'get_userid': {
+      desc: 'Generate a fake Discord-style ID from a username',
+      fn: async (args)=> {
+        if (!args[0]) {
+          printLine('Usage: get_userid <username#tag>   (example: get_userid DebugGuru#1234)');
+          return;
+        }
+        const target = args.join(' ');
+        printLine('Querying directory for: ' + target);
+        const id = await deterministicFakeId(target);
+        printLine('Result: ' + id);
+      }
+    },
+    'simulate-hack': {
+      desc: 'Cinematic sequence',
+      fn: async (args)=> {
+        const target = args.join(' ') || 'unknown-target';
+        printLine('Launching intrusion sequence against: ' + target);
+        await simulateProgress('Establishing secure channel', 1000);
+        await simulateProgress('Enumerating services', 1200);
+        printLine('Found ports: 22, 80, 443, 8080');
+        await simulateProgress('Exploiting toy-vuln-42', 900);
+        printLine('[OK] Retrieved metadata: user_displayname=' + target);
+        printLine('[OK] Extracted: user_id -> ' + await deterministicFakeId(target));
+        printLine('Note: this is a staged sequence for cinematic use and does not access external systems.');
+      }
+    },
+    'clear': {
+      desc: 'Clear viewport',
+      fn: async (args)=> {
+        viewport.innerHTML = '';
+      }
+    },
+    'help-hidden-secret': {
+      desc: 'Easter egg',
+      fn: async ()=> {
+        printLine('You found an easter egg. Nice.');
+      }
+    }
+  };
+
+  // helper: print a line with small delay to simulate typing
+  function printLine(text='', opts={}) {
+    const div = document.createElement('div');
+    div.className = 'line';
+    if (opts.muted) div.style.color = 'var(--muted)';
+    div.textContent = text;
+    viewport.appendChild(div);
+    viewport.scrollTop = viewport.scrollHeight;
+  }
+
+  function wait(ms){return new Promise(r=>setTimeout(r, ms));}
+
+  async function simulateProgress(label, totalMs){
+    const ln = document.createElement('div');
+    ln.className = 'line';
+    ln.textContent = label + '...';
+    viewport.appendChild(ln);
+    const barWrap = document.createElement('div');
+    barWrap.className = 'fake-progress';
+    const bar = document.createElement('i');
+    bar.style.width = '0%';
+    barWrap.appendChild(bar);
+    viewport.appendChild(barWrap);
+    viewport.scrollTop = viewport.scrollHeight;
+
+    const steps = 30;
+    for(let i=0;i<=steps;i++){
+      bar.style.width = Math.round((i/steps)*100) + '%';
+      await wait(totalMs/steps);
+    }
+    printLine(label + ' [OK]');
+  }
+
+  // deterministic fake id generator: SHA-256 of input -> use first 10 bytes to build a number, mod 10^18
+  async function deterministicFakeId(str){
+    try{
+      const enc = new TextEncoder().encode(str + '|fake-terminal-v1');
+      const hash = await crypto.subtle.digest('SHA-256', enc);
+      const bytes = new Uint8Array(hash).slice(0,10); // take first 10 bytes
+      let num = BigInt(0);
+      for (let b of bytes) {
+        num = (num << BigInt(8)) + BigInt(b);
+      }
+      const mod = BigInt('1000000000000000000'); // 10^18
+      const idNum = (num % mod).toString().padStart(18,'0');
+      return idNum;
+    }catch(e){
+      let x=0;
+      for(let i=0;i<str.length;i++) x = ((x<<5)-x) + str.charCodeAt(i);
+      x = Math.abs(x);
+      return ('' + (123456789012345678 + (x % 87654321))).slice(0,18);
+    }
+  }
+
+  // wiring input
+  let history = [];
+  let histPos = -1;
+  input.addEventListener('keydown', async (ev)=>{
+    if (ev.key === 'Enter') {
+      const raw = input.value.trim();
+      if (raw === '') return;
+      history.unshift(raw);
+      histPos = -1;
+      printLine('operator@arcadia:~$ ' + raw);
+      input.value = '';
+      const parts = raw.split(/\s+/);
+      const cmd = parts[0];
+      const args = parts.slice(1);
+      if (commands[cmd]) {
+        try {
+          status.textContent = 'processing...';
+          await commands[cmd].fn(args);
+          status.textContent = '';
+        } catch(err){
+          printLine('Error: ' + String(err));
+          status.textContent = '';
+        }
+      } else {
+        if (raw.startsWith('ssh ')) {
+          printLine('ssh: connecting...');
+          await simulateProgress('Establishing SSH session', 1000);
+          printLine('Connected.');
+        } else if (raw.startsWith('nmap ')) {
+          printLine('Starting Nmap ...');
+          await simulateProgress('Scanning', 1300);
+          printLine('22/tcp open  ssh');
+          printLine('80/tcp open  http');
+          printLine('4444/tcp open  unknown');
+        } else {
+          printLine('sh: 1: ' + cmd + ': not found');
+        }
+      }
+    } else if (ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      if (history.length === 0) return;
+      histPos = Math.min(history.length-1, histPos+1);
+      input.value = history[histPos] || '';
+    } else if (ev.key === 'ArrowDown') {
+      ev.preventDefault();
+      if (history.length === 0) return;
+      histPos = Math.max(-1, histPos-1);
+      input.value = (histPos === -1) ? '' : history[histPos];
+    }
+  });
+
+  viewport.addEventListener('click',()=> input.focus());
+  input.focus();
+
+  // initial boot sequence
+  async function bootSequence(){
+    await wait(300);
+    printLine('-- SESSION: ARCADIA / 2025-10-31T02:14:48Z --', {muted:true});
+    await wait(250);
+    printLine('bootloader: GRD-2.1 init...');
+    await wait(240);
+    printLine('loading kernel modules... [OK]');
+    await wait(240);
+    printLine('detected hardware: GPU: PhantomX 2080i | RAM: 64GB | NET: vNIC-Arc-03');
+    await wait(300);
+    printLine('');
+    await wait(300);
+    printLine('operator@arcadia:~$ sudo apt update');
+    await simulateProgress('Updating package lists', 1000);
+    printLine('operator@arcadia:~$ neon-shell connect 172.16.254.8');
+    await simulateProgress('Establishing secure connection', 900);
+    printLine('neon-shell> stream /var/log/daemon/neon.log --follow');
+    await wait(300);
+    printLine('[ALERT] neon-agent: eyestalk spawned -> escalating to operator');
+    await wait(400);
+    printLine('');
+    printLine('Tip: press Enter after a command to see output.', {muted:true});
+  }
+  bootSequence();
+
+})();
+</script>
+</body>
+</html>
