@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Rendering Utility v3.0</title>
+<style>
+    body {
+        background:#0e0e0f;
+        color:#e3e3e3;
+        font-family: Consolas, monospace;
+        padding: 20px;
+    }
+    h1 {
+        color:#ff3b3b;
+        font-weight: normal;
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+    }
+    .module {
+        border:1px solid #2b2b2c;
+        padding: 15px;
+        margin-top: 20px;
+        background:#141415;
+    }
+    input[type="file"], input[type="number"] {
+        background:#101011;
+        border:1px solid #2b2b2c;
+        padding:5px;
+        color:#e3e3e3;
+        width: 240px;
+    }
+    label {
+        display:block;
+        margin-top:10px;
+        font-size:14px;
+    }
+    button {
+        margin-top:20px;
+        padding:10px 20px;
+        background:#ff3b3b;
+        color:white;
+        border:none;
+        cursor:pointer;
+        font-family: Consolas, monospace;
+    }
+    button:hover { background:#ff5050; }
+    canvas {
+        border:1px solid #2b2b2c;
+        margin-top:20px;
+        max-width:100%;
+        background:#1b1b1c;
+    }
+</style>
+</head>
+<body>
+
+<h1>SCP URBAN SHADE – INTERNAL RENDERING UTILITY</h1>
+<span style="color:#777;">Access Level 2 Clearance Required</span>
+
+<div class="module">
+    <h3>Input Module</h3>
+
+    <label>Source Image Upload</label>
+    <input type="file" id="imgInput" accept="image/*">
+
+    <label>Brush Texture Upload</label>
+    <input type="file" id="brushInput" accept="image/*">
+
+    <label>Detail Level (Smallest Brush)</label>
+    <input type="number" id="detail" value="10" min="2" max="80">
+
+    <label>Largest Brush</label>
+    <input type="number" id="maxBrush" value="180" min="20" max="600">
+
+    <label>Strokes Per Level</label>
+    <input type="number" id="strokes" value="6000" min="250" max="50000">
+
+    <button id="start">BEGIN RENDER</button>
+</div>
+
+<canvas id="c"></canvas>
+
+<script>
+// Utility to load images
+function fileToImage(file) {
+    return new Promise((resolve,reject) => {
+        const img = new Image();
+        img.onload = ()=>resolve(img);
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+// Sobel edge detection (for direction)
+function sobelAngle(srcCtx, x, y) {
+    const w = srcCtx.canvas.width;
+    const h = srcCtx.canvas.height;
+
+    if (x <= 0 || x >= w-1 || y <= 0 || y >= h-1) return 0;
+
+    const g = (xx,yy)=>{
+        return srcCtx.getImageData(xx,yy,1,1).data[0]/255;
+    };
+
+    let gx =
+        -1*g(x-1,y-1) + 1*g(x+1,y-1) +
+        -2*g(x-1,y  ) + 2*g(x+1,y  ) +
+        -1*g(x-1,y+1) + 1*g(x+1,y+1);
+
+    let gy =
+        -1*g(x-1,y-1) -2*g(x,y-1) -1*g(x+1,y-1) +
+         1*g(x-1,y+1) +2*g(x,y+1) +1*g(x+1,y+1);
+
+    const angle = Math.atan2(gy, gx);
+    return angle;
+}
+
+function pixelDiff(src, out, x, y) {
+    const s = src.getImageData(x, y, 1, 1).data;
+    const o = out.getImageData(x, y, 1, 1).data;
+    return Math.abs(s[0]-o[0]) + Math.abs(s[1]-o[1]) + Math.abs(s[2]-o[2]);
+}
+
+function stampBrush(ctx, brush, size, color, x, y, rotation=0) {
+    const tmp = document.createElement("canvas");
+    tmp.width = size;
+    tmp.height = size;
+
+    const tctx = tmp.getContext("2d");
+    tctx.translate(size/2, size/2);
+    tctx.rotate(rotation);
+    tctx.drawImage(brush, -size/2, -size/2, size, size);
+
+    tctx.globalCompositeOperation = "source-in";
+    tctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
+    tctx.fillRect(-size/2, -size/2, size, size);
+
+    ctx.drawImage(tmp, x - size/2, y - size/2);
+}
+
+function getColor(src, x, y) {
+    const d = src.getImageData(x,y,1,1).data;
+    return { r:d[0], g:d[1], b:d[2] };
+}
+
+const imgInput = document.getElementById("imgInput");
+const brushInput = document.getElementById("brushInput");
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+let srcImg = null;
+let brushImg = null;
+
+imgInput.onchange = e=>{
+    fileToImage(e.target.files[0]).then(i=>srcImg=i);
+};
+brushInput.onchange = e=>{
+    fileToImage(e.target.files[0]).then(i=>brushImg=i);
+};
+
+document.getElementById("start").onclick = ()=>{
+    if(!srcImg || !brushImg){
+        alert("Missing required input files");
+        return;
+    }
+
+    canvas.width = srcImg.width;
+    canvas.height = srcImg.height;
+    ctx.fillStyle = "#1a1a1b";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    const srcC = document.createElement("canvas");
+    srcC.width = srcImg.width;
+    srcC.height = srcImg.height;
+    const sctx = srcC.getContext("2d");
+    sctx.drawImage(srcImg,0,0);
+
+    const smallest = parseInt(detail.value);
+    const largest = parseInt(maxBrush.value);
+    const strokes = parseInt(strokesPerLevel.value);
+
+    let sizes = [];
+    let s = largest;
+    while(s > smallest){
+        sizes.push(s);
+        s = Math.round(s * 0.55);
+    }
+    sizes.push(smallest);
+
+    for(let size of sizes){
+        for(let i=0; i<strokes; i++){
+            const x = Math.floor(Math.random()*canvas.width);
+            const y = Math.floor(Math.random()*canvas.height);
+
+            const diff = pixelDiff(sctx, ctx, x, y);
+            if(diff < 40) continue;
+
+            const color = getColor(sctx, x, y);
+
+            let rot = sobelAngle(sctx, x, y);
+
+            stampBrush(ctx, brushImg, size, color, x, y, rot);
+        }
+    }
+
+    alert("Render Complete – node output ready.");
+};
+</script>
+
+</body>
+</html>
