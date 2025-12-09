@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Image Geometrizer with Custom Brush</title>
+    <title>Image Geometrizer with Custom Brush and Multiple Shapes</title>
     <style>
         body { font-family: Arial, sans-serif; }
         canvas { border: 1px solid black; display: inline-block; }
@@ -10,19 +10,29 @@
     </style>
 </head>
 <body>
-    <h1>Image Geometrizer with Custom Brush</h1>
-    <p>Upload an image to geometrize (from Blender or elsewhere). Optionally upload a custom brush image (transparent PNG recommended for shapes like horror elements). Adjust settings and start the process.</p>
+    <h1>Image Geometrizer with Custom Brush and Multiple Shapes</h1>
+    <p>Upload an image to geometrize (from Blender or elsewhere). Optionally upload a custom brush image (transparent PNG recommended for horror elements like skulls, monsters, or eerie shapes). Select shape types below—using multiple (especially triangles, ellipses) will add more detail and organic feel, great for horror scenes. Adjust settings for finer control: higher candidates/mutations for better quality (but slower), lower opacity for subtler layers, higher max shapes for more detail.</p>
     
     <div id="controls">
         <label>Target Image: <input type="file" id="imageUpload" accept="image/*"></label><br>
         <label>Custom Brush (optional): <input type="file" id="brushUpload" accept="image/*"></label><br>
         <label>Shape Opacity (1-255): <input type="number" id="shapeOpacity" value="128" min="1" max="255"></label><br>
-        <label>Candidates per Step: <input type="number" id="candidates" value="20" min="1" max="100"></label><br>
-        <label>Mutations per Candidate: <input type="number" id="mutations" value="50" min="1" max="300"></label><br>
-        <label>Max Shapes: <input type="number" id="maxShapes" value="3000" min="100" max="10000"></label><br>
+        <label>Candidates per Step: <input type="number" id="candidates" value="50" min="1" max="200"></label><br>
+        <label>Mutations per Candidate: <input type="number" id="mutations" value="100" min="1" max="500"></label><br>
+        <label>Max Shapes: <input type="number" id="maxShapes" value="5000" min="100" max="20000"></label><br>
+        <div>Shape Types (select multiple for more detail):</div>
+        <label><input type="checkbox" class="shapeType" value="rect" checked> Rectangles</label>
+        <label><input type="checkbox" class="shapeType" value="rotated_rect"> Rotated Rectangles</label>
+        <label><input type="checkbox" class="shapeType" value="triangle"> Triangles</label>
+        <label><input type="checkbox" class="shapeType" value="ellipse"> Ellipses</label>
+        <label><input type="checkbox" class="shapeType" value="rotated_ellipse"> Rotated Ellipses</label>
+        <label><input type="checkbox" class="shapeType" value="circle"> Circles</label>
+        <!-- Lines and Beziers skipped for simplicity; add if needed -->
+        <label><input type="checkbox" class="shapeType" value="brush" id="brushCheckbox" disabled> Custom Brush (enabled if uploaded)</label><br>
         <button id="startBtn">Start</button>
         <button id="pauseBtn" disabled>Pause</button>
         <button id="resetBtn">Reset</button>
+        <div>Shapes Added: <span id="shapesAdded">0</span></div>
     </div>
     
     <canvas id="original" width="0" height="0"></canvas>
@@ -37,9 +47,11 @@
         let height = 0;
         let running = false;
         let shapeCount = 0;
+        let selectedShapes = ['rect'];
         
         const imageUpload = document.getElementById('imageUpload');
         const brushUpload = document.getElementById('brushUpload');
+        const brushCheckbox = document.getElementById('brushCheckbox');
         const startBtn = document.getElementById('startBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const resetBtn = document.getElementById('resetBtn');
@@ -47,6 +59,8 @@
         const candidatesInput = document.getElementById('candidates');
         const mutationsInput = document.getElementById('mutations');
         const maxShapesInput = document.getElementById('maxShapes');
+        const shapesAddedSpan = document.getElementById('shapesAdded');
+        const shapeTypeCheckboxes = document.querySelectorAll('.shapeType');
         
         function loadImageFile(file, callback) {
             const reader = new FileReader();
@@ -75,12 +89,15 @@
         brushUpload.addEventListener('change', (e) => {
             loadImageFile(e.target.files[0], (img) => {
                 brushImg = img;
+                brushCheckbox.disabled = false;
+                brushCheckbox.checked = true;
             });
         });
         
         resetBtn.addEventListener('click', () => {
             running = false;
             shapeCount = 0;
+            shapesAddedSpan.textContent = 0;
             startBtn.disabled = false;
             pauseBtn.disabled = true;
             const canvas = document.getElementById('geometrized');
@@ -93,15 +110,23 @@
                 alert('Please upload a target image first.');
                 return;
             }
+            selectedShapes = Array.from(shapeTypeCheckboxes)
+                .filter(cb => cb.checked && (cb.value !== 'brush' || brushImg))
+                .map(cb => cb.value);
+            if (selectedShapes.length === 0) {
+                alert('Please select at least one shape type.');
+                return;
+            }
             running = true;
             startBtn.disabled = true;
             pauseBtn.disabled = false;
             shapeCount = 0;
+            shapesAddedSpan.textContent = 0;
             const canvas = document.getElementById('geometrized');
             canvas.width = width;
             canvas.height = height;
             currentCtx = canvas.getContext('2d');
-            // Set initial background
+            // Set initial background to average color
             const bgColor = getAverageColor(targetImageData);
             currentCtx.fillStyle = `rgb(${bgColor.r}, ${bgColor.g}, ${bgColor.b})`;
             currentCtx.fillRect(0, 0, width, height);
@@ -165,53 +190,77 @@
             if (bestImprovement > 0 && bestParams) {
                 applyShape(bestParams, bestColor, opacity);
                 shapeCount++;
+                shapesAddedSpan.textContent = shapeCount;
             }
             
             requestAnimationFrame(addShapeStep);
         }
         
         function generateRandomParams() {
-            const isBrush = !!brushImg;
-            if (isBrush) {
-                return {
-                    type: 'brush',
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    scale: Math.random() * 0.15 + 0.05,
-                    rotation: Math.random() * Math.PI * 2
-                };
-            } else {
-                // Default to rectangle
-                const x = Math.random() * width;
-                const y = Math.random() * height;
-                const w = (Math.random() * 0.2 + 0.05) * width;
-                const h = (Math.random() * 0.2 + 0.05) * height;
-                return {
-                    type: 'rect',
-                    x,
-                    y,
-                    w,
-                    h
-                };
+            const type = selectedShapes[Math.floor(Math.random() * selectedShapes.length)];
+            const params = { type };
+            const minSize = 5;
+            const maxSizeRel = 0.3;
+            
+            switch (type) {
+                case 'brush':
+                    if (!brushImg) return generateRandomParams(); // Fallback if no brush
+                    params.x = Math.random() * width;
+                    params.y = Math.random() * height;
+                    params.scale = Math.random() * 0.3 + 0.02;
+                    params.rotation = Math.random() * Math.PI * 2;
+                    break;
+                case 'rect':
+                case 'rotated_rect':
+                    params.x = Math.random() * width;
+                    params.y = Math.random() * height;
+                    params.w = minSize + Math.random() * (width * maxSizeRel);
+                    params.h = minSize + Math.random() * (height * maxSizeRel);
+                    if (type === 'rotated_rect') params.rotation = Math.random() * Math.PI * 2;
+                    break;
+                case 'triangle':
+                    params.points = [];
+                    for (let i = 0; i < 3; i++) {
+                        params.points.push(Math.random() * width, Math.random() * height);
+                    }
+                    break;
+                case 'ellipse':
+                case 'rotated_ellipse':
+                    params.x = Math.random() * width;
+                    params.y = Math.random() * height;
+                    params.rx = minSize / 2 + Math.random() * (width * maxSizeRel / 2);
+                    params.ry = minSize / 2 + Math.random() * (height * maxSizeRel / 2);
+                    if (type === 'rotated_ellipse') params.rotation = Math.random() * Math.PI * 2;
+                    break;
+                case 'circle':
+                    params.x = Math.random() * width;
+                    params.y = Math.random() * height;
+                    params.r = minSize / 2 + Math.random() * (Math.min(width, height) * maxSizeRel / 2);
+                    break;
             }
+            return params;
         }
         
         function mutateParams(params) {
-            const mutated = {...params};
-            const delta = 0.05; // Relative mutation
-            mutated.x += (Math.random() - 0.5) * width * delta;
-            mutated.y += (Math.random() - 0.5) * height * delta;
-            mutated.x = Math.max(0, Math.min(width, mutated.x));
-            mutated.y = Math.max(0, Math.min(height, mutated.y));
-            if (params.type === 'brush') {
-                mutated.scale += (Math.random() - 0.5) * mutated.scale * delta * 2;
-                mutated.scale = Math.max(0.01, Math.min(1, mutated.scale));
-                mutated.rotation += (Math.random() - 0.5) * Math.PI * delta * 4;
-            } else if (params.type === 'rect') {
-                mutated.w += (Math.random() - 0.5) * mutated.w * delta * 2;
-                mutated.h += (Math.random() - 0.5) * mutated.h * delta * 2;
-                mutated.w = Math.max(5, Math.min(width, mutated.w));
-                mutated.h = Math.max(5, Math.min(height, mutated.h));
+            const mutated = { ...params, points: params.points ? [...params.points] : undefined };
+            const delta = 0.1; // Increased for more exploration
+            
+            const mutatePos = (val, max) => val + (Math.random() - 0.5) * max * delta;
+            
+            if ('x' in mutated) mutated.x = Math.max(0, Math.min(width, mutatePos(mutated.x, width)));
+            if ('y' in mutated) mutated.y = Math.max(0, Math.min(height, mutatePos(mutated.y, height)));
+            if ('w' in mutated) mutated.w = Math.max(5, Math.min(width, mutated.w + (Math.random() - 0.5) * mutated.w * delta * 2));
+            if ('h' in mutated) mutated.h = Math.max(5, Math.min(height, mutated.h + (Math.random() - 0.5) * mutated.h * delta * 2));
+            if ('rx' in mutated) mutated.rx = Math.max(2.5, Math.min(width / 2, mutated.rx + (Math.random() - 0.5) * mutated.rx * delta * 2));
+            if ('ry' in mutated) mutated.ry = Math.max(2.5, Math.min(height / 2, mutated.ry + (Math.random() - 0.5) * mutated.ry * delta * 2));
+            if ('r' in mutated) mutated.r = Math.max(2.5, Math.min(Math.min(width, height) / 2, mutated.r + (Math.random() - 0.5) * mutated.r * delta * 2));
+            if ('rotation' in mutated) mutated.rotation += (Math.random() - 0.5) * Math.PI * delta * 4;
+            if ('scale' in mutated) mutated.scale = Math.max(0.01, Math.min(1, mutated.scale + (Math.random() - 0.5) * mutated.scale * delta * 2));
+            if (mutated.points) {
+                for (let i = 0; i < mutated.points.length; i += 2) {
+                    mutated.points[i] = Math.max(0, Math.min(width, mutatePos(mutated.points[i], width)));
+                    mutated.points[i + 1] = Math.max(0, Math.min(height, mutatePos(mutated.points[i + 1], height)));
+                }
             }
             return mutated;
         }
@@ -266,45 +315,69 @@
             tempCanvas.height = height;
             const tempCtx = tempCanvas.getContext('2d');
             tempCtx.clearRect(0, 0, width, height);
-            
-            if (params.type === 'brush' && brushImg) {
-                tempCtx.save();
-                tempCtx.translate(params.x, params.y);
-                tempCtx.rotate(params.rotation);
-                tempCtx.drawImage(brushImg, -brushImg.width * params.scale / 2, -brushImg.height * params.scale / 2, brushImg.width * params.scale, brushImg.height * params.scale);
-                tempCtx.restore();
-            } else if (params.type === 'rect') {
-                tempCtx.fillStyle = `rgba(255, 255, 255, ${opacity / 255})`;
-                tempCtx.fillRect(params.x, params.y, params.w, params.h);
-            } else {
-                return null;
-            }
+            drawShape(tempCtx, params, `rgba(255, 255, 255, ${opacity / 255})`, true);
             return tempCtx.getImageData(0, 0, width, height);
         }
         
         function applyShape(params, color, opacity) {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = width;
-            tempCanvas.height = height;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.clearRect(0, 0, width, height);
-            
-            if (params.type === 'brush' && brushImg) {
-                tempCtx.save();
-                tempCtx.translate(params.x, params.y);
-                tempCtx.rotate(params.rotation);
-                tempCtx.drawImage(brushImg, -brushImg.width * params.scale / 2, -brushImg.height * params.scale / 2, brushImg.width * params.scale, brushImg.height * params.scale);
-                tempCtx.restore();
-                tempCtx.globalCompositeOperation = 'source-in';
-                tempCtx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
-                tempCtx.fillRect(0, 0, width, height);
-            } else if (params.type === 'rect') {
-                tempCtx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
-                tempCtx.globalAlpha = opacity / 255;
-                tempCtx.fillRect(params.x, params.y, params.w, params.h);
+            currentCtx.globalAlpha = opacity / 255;
+            drawShape(currentCtx, params, `rgb(${color.r}, ${color.g}, ${color.b})`, false);
+            currentCtx.globalAlpha = 1;
+        }
+        
+        function drawShape(ctx, params, fillStyle, isMask) {
+            ctx.fillStyle = fillStyle;
+            ctx.beginPath();
+            switch (params.type) {
+                case 'brush':
+                    if (!brushImg) return;
+                    ctx.save();
+                    ctx.translate(params.x, params.y);
+                    ctx.rotate(params.rotation);
+                    if (isMask) {
+                        ctx.drawImage(brushImg, -brushImg.width * params.scale / 2, -brushImg.height * params.scale / 2, brushImg.width * params.scale, brushImg.height * params.scale);
+                    } else {
+                        // For apply, we already set globalAlpha, and fill inside if needed, but since brush is image, we draw and use source-in for color
+                        ctx.drawImage(brushImg, -brushImg.width * params.scale / 2, -brushImg.height * params.scale / 2, brushImg.width * params.scale, brushImg.height * params.scale);
+                        ctx.restore(); // Restore before composite
+                        ctx.save();
+                        ctx.globalCompositeOperation = 'source-in';
+                        ctx.fillStyle = fillStyle;
+                        ctx.fillRect(0, 0, width, height);
+                    }
+                    ctx.restore();
+                    break;
+                case 'rect':
+                    ctx.rect(params.x, params.y, params.w, params.h);
+                    break;
+                case 'rotated_rect':
+                    ctx.save();
+                    ctx.translate(params.x + params.w / 2, params.y + params.h / 2);
+                    ctx.rotate(params.rotation);
+                    ctx.rect(-params.w / 2, -params.h / 2, params.w, params.h);
+                    ctx.restore();
+                    break;
+                case 'triangle':
+                    ctx.moveTo(params.points[0], params.points[1]);
+                    ctx.lineTo(params.points[2], params.points[3]);
+                    ctx.lineTo(params.points[4], params.points[5]);
+                    ctx.closePath();
+                    break;
+                case 'ellipse':
+                    ctx.ellipse(params.x, params.y, params.rx, params.ry, 0, 0, Math.PI * 2);
+                    break;
+                case 'rotated_ellipse':
+                    ctx.save();
+                    ctx.translate(params.x, params.y);
+                    ctx.rotate(params.rotation);
+                    ctx.ellipse(0, 0, params.rx, params.ry, 0, 0, Math.PI * 2);
+                    ctx.restore();
+                    break;
+                case 'circle':
+                    ctx.arc(params.x, params.y, params.r, 0, Math.PI * 2);
+                    break;
             }
-            
-            currentCtx.drawImage(tempCanvas, 0, 0);
+            if (params.type !== 'brush' || isMask) ctx.fill();
         }
     </script>
 </body>
