@@ -1,211 +1,311 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Rendering Utility v3.0</title>
-<style>
-    body {
-        background:#0e0e0f;
-        color:#e3e3e3;
-        font-family: Consolas, monospace;
-        padding: 20px;
-    }
-    h1 {
-        color:#ff3b3b;
-        font-weight: normal;
-        letter-spacing: 1px;
-        margin-bottom: 5px;
-    }
-    .module {
-        border:1px solid #2b2b2c;
-        padding: 15px;
-        margin-top: 20px;
-        background:#141415;
-    }
-    input[type="file"], input[type="number"] {
-        background:#101011;
-        border:1px solid #2b2b2c;
-        padding:5px;
-        color:#e3e3e3;
-        width: 240px;
-    }
-    label {
-        display:block;
-        margin-top:10px;
-        font-size:14px;
-    }
-    button {
-        margin-top:20px;
-        padding:10px 20px;
-        background:#ff3b3b;
-        color:white;
-        border:none;
-        cursor:pointer;
-        font-family: Consolas, monospace;
-    }
-    button:hover { background:#ff5050; }
-    canvas {
-        border:1px solid #2b2b2c;
-        margin-top:20px;
-        max-width:100%;
-        background:#1b1b1c;
-    }
-</style>
+    <meta charset="UTF-8">
+    <title>Image Geometrizer with Custom Brush</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        canvas { border: 1px solid black; display: inline-block; }
+        #controls { margin-bottom: 10px; }
+    </style>
 </head>
 <body>
-
-<h1>SCP URBAN SHADE – INTERNAL RENDERING UTILITY</h1>
-<span style="color:#777;">Access Level 2 Clearance Required</span>
-
-<div class="module">
-    <h3>Input Module</h3>
-
-    <label>Source Image Upload</label>
-    <input type="file" id="imgInput" accept="image/*">
-
-    <label>Brush Texture Upload</label>
-    <input type="file" id="brushInput" accept="image/*">
-
-    <label>Detail Level (Smallest Brush)</label>
-    <input type="number" id="detail" value="10" min="2" max="80">
-
-    <label>Largest Brush</label>
-    <input type="number" id="maxBrush" value="180" min="20" max="600">
-
-    <label>Strokes Per Level</label>
-    <input type="number" id="strokes" value="6000" min="250" max="50000">
-
-    <button id="start">BEGIN RENDER</button>
-</div>
-
-<canvas id="c"></canvas>
-
-<script>
-// Utility to load images
-function fileToImage(file) {
-    return new Promise((resolve,reject) => {
-        const img = new Image();
-        img.onload = ()=>resolve(img);
-        img.onerror = reject;
-        img.src = URL.createObjectURL(file);
-    });
-}
-
-// Sobel edge detection (for direction)
-function sobelAngle(srcCtx, x, y) {
-    const w = srcCtx.canvas.width;
-    const h = srcCtx.canvas.height;
-
-    if (x <= 0 || x >= w-1 || y <= 0 || y >= h-1) return 0;
-
-    const g = (xx,yy)=>{
-        return srcCtx.getImageData(xx,yy,1,1).data[0]/255;
-    };
-
-    let gx =
-        -1*g(x-1,y-1) + 1*g(x+1,y-1) +
-        -2*g(x-1,y  ) + 2*g(x+1,y  ) +
-        -1*g(x-1,y+1) + 1*g(x+1,y+1);
-
-    let gy =
-        -1*g(x-1,y-1) -2*g(x,y-1) -1*g(x+1,y-1) +
-         1*g(x-1,y+1) +2*g(x,y+1) +1*g(x+1,y+1);
-
-    const angle = Math.atan2(gy, gx);
-    return angle;
-}
-
-function pixelDiff(src, out, x, y) {
-    const s = src.getImageData(x, y, 1, 1).data;
-    const o = out.getImageData(x, y, 1, 1).data;
-    return Math.abs(s[0]-o[0]) + Math.abs(s[1]-o[1]) + Math.abs(s[2]-o[2]);
-}
-
-function stampBrush(ctx, brush, size, color, x, y, rotation=0) {
-    const tmp = document.createElement("canvas");
-    tmp.width = size;
-    tmp.height = size;
-
-    const tctx = tmp.getContext("2d");
-    tctx.translate(size/2, size/2);
-    tctx.rotate(rotation);
-    tctx.drawImage(brush, -size/2, -size/2, size, size);
-
-    tctx.globalCompositeOperation = "source-in";
-    tctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
-    tctx.fillRect(-size/2, -size/2, size, size);
-
-    ctx.drawImage(tmp, x - size/2, y - size/2);
-}
-
-function getColor(src, x, y) {
-    const d = src.getImageData(x,y,1,1).data;
-    return { r:d[0], g:d[1], b:d[2] };
-}
-
-const imgInput = document.getElementById("imgInput");
-const brushInput = document.getElementById("brushInput");
-const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d");
-
-let srcImg = null;
-let brushImg = null;
-
-imgInput.onchange = e=>{
-    fileToImage(e.target.files[0]).then(i=>srcImg=i);
-};
-brushInput.onchange = e=>{
-    fileToImage(e.target.files[0]).then(i=>brushImg=i);
-};
-
-document.getElementById("start").onclick = ()=>{
-    if(!srcImg || !brushImg){
-        alert("Missing required input files");
-        return;
-    }
-
-    canvas.width = srcImg.width;
-    canvas.height = srcImg.height;
-    ctx.fillStyle = "#1a1a1b";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-
-    const srcC = document.createElement("canvas");
-    srcC.width = srcImg.width;
-    srcC.height = srcImg.height;
-    const sctx = srcC.getContext("2d");
-    sctx.drawImage(srcImg,0,0);
-
-    const smallest = parseInt(detail.value);
-    const largest = parseInt(maxBrush.value);
-    const strokes = parseInt(strokesPerLevel.value);
-
-    let sizes = [];
-    let s = largest;
-    while(s > smallest){
-        sizes.push(s);
-        s = Math.round(s * 0.55);
-    }
-    sizes.push(smallest);
-
-    for(let size of sizes){
-        for(let i=0; i<strokes; i++){
-            const x = Math.floor(Math.random()*canvas.width);
-            const y = Math.floor(Math.random()*canvas.height);
-
-            const diff = pixelDiff(sctx, ctx, x, y);
-            if(diff < 40) continue;
-
-            const color = getColor(sctx, x, y);
-
-            let rot = sobelAngle(sctx, x, y);
-
-            stampBrush(ctx, brushImg, size, color, x, y, rot);
+    <h1>Image Geometrizer with Custom Brush</h1>
+    <p>Upload an image to geometrize (from Blender or elsewhere). Optionally upload a custom brush image (transparent PNG recommended for shapes like horror elements). Adjust settings and start the process.</p>
+    
+    <div id="controls">
+        <label>Target Image: <input type="file" id="imageUpload" accept="image/*"></label><br>
+        <label>Custom Brush (optional): <input type="file" id="brushUpload" accept="image/*"></label><br>
+        <label>Shape Opacity (1-255): <input type="number" id="shapeOpacity" value="128" min="1" max="255"></label><br>
+        <label>Candidates per Step: <input type="number" id="candidates" value="20" min="1" max="100"></label><br>
+        <label>Mutations per Candidate: <input type="number" id="mutations" value="50" min="1" max="300"></label><br>
+        <label>Max Shapes: <input type="number" id="maxShapes" value="3000" min="100" max="10000"></label><br>
+        <button id="startBtn">Start</button>
+        <button id="pauseBtn" disabled>Pause</button>
+        <button id="resetBtn">Reset</button>
+    </div>
+    
+    <canvas id="original" width="0" height="0"></canvas>
+    <canvas id="geometrized" width="0" height="0"></canvas>
+    
+    <script>
+        let targetImg = null;
+        let targetImageData = null;
+        let brushImg = null;
+        let currentCtx = null;
+        let width = 0;
+        let height = 0;
+        let running = false;
+        let shapeCount = 0;
+        
+        const imageUpload = document.getElementById('imageUpload');
+        const brushUpload = document.getElementById('brushUpload');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const shapeOpacityInput = document.getElementById('shapeOpacity');
+        const candidatesInput = document.getElementById('candidates');
+        const mutationsInput = document.getElementById('mutations');
+        const maxShapesInput = document.getElementById('maxShapes');
+        
+        function loadImageFile(file, callback) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => callback(img);
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
-    }
-
-    alert("Render Complete – node output ready.");
-};
-</script>
-
+        
+        imageUpload.addEventListener('change', (e) => {
+            loadImageFile(e.target.files[0], (img) => {
+                targetImg = img;
+                const canvas = document.getElementById('original');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                targetImageData = ctx.getImageData(0, 0, img.width, img.height);
+                width = img.width;
+                height = img.height;
+            });
+        });
+        
+        brushUpload.addEventListener('change', (e) => {
+            loadImageFile(e.target.files[0], (img) => {
+                brushImg = img;
+            });
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            running = false;
+            shapeCount = 0;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            const canvas = document.getElementById('geometrized');
+            canvas.width = 0;
+            canvas.height = 0;
+        });
+        
+        startBtn.addEventListener('click', () => {
+            if (!targetImageData) {
+                alert('Please upload a target image first.');
+                return;
+            }
+            running = true;
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            shapeCount = 0;
+            const canvas = document.getElementById('geometrized');
+            canvas.width = width;
+            canvas.height = height;
+            currentCtx = canvas.getContext('2d');
+            // Set initial background
+            const bgColor = getAverageColor(targetImageData);
+            currentCtx.fillStyle = `rgb(${bgColor.r}, ${bgColor.g}, ${bgColor.b})`;
+            currentCtx.fillRect(0, 0, width, height);
+            addShapeStep();
+        });
+        
+        pauseBtn.addEventListener('click', () => {
+            running = false;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+        });
+        
+        function getAverageColor(imageData) {
+            let r = 0, g = 0, b = 0;
+            const data = imageData.data;
+            const len = data.length / 4;
+            for (let i = 0; i < len; i++) {
+                r += data[i * 4];
+                g += data[i * 4 + 1];
+                b += data[i * 4 + 2];
+            }
+            return {r: Math.floor(r / len), g: Math.floor(g / len), b: Math.floor(b / len)};
+        }
+        
+        function addShapeStep() {
+            if (!running || shapeCount >= parseInt(maxShapesInput.value)) {
+                running = false;
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+                return;
+            }
+            
+            const opacity = parseInt(shapeOpacityInput.value);
+            const candidates = parseInt(candidatesInput.value);
+            const mutations = parseInt(mutationsInput.value);
+            
+            let bestImprovement = 0;
+            let bestColor = {r: 0, g: 0, b: 0};
+            let bestParams = null;
+            
+            const currentImageData = currentCtx.getImageData(0, 0, width, height);
+            
+            for (let cand = 0; cand < candidates; cand++) {
+                let params = generateRandomParams();
+                let improvement = computeImprovement(params, currentImageData, opacity);
+                for (let mut = 0; mut < mutations; mut++) {
+                    const mutatedParams = mutateParams(params);
+                    const mutImprovement = computeImprovement(mutatedParams, currentImageData, opacity);
+                    if (mutImprovement > improvement) {
+                        improvement = mutImprovement;
+                        params = mutatedParams;
+                    }
+                }
+                if (improvement > bestImprovement) {
+                    bestImprovement = improvement;
+                    bestParams = params;
+                    bestColor = computeOptimalColor(params, currentImageData, opacity);
+                }
+            }
+            
+            if (bestImprovement > 0 && bestParams) {
+                applyShape(bestParams, bestColor, opacity);
+                shapeCount++;
+            }
+            
+            requestAnimationFrame(addShapeStep);
+        }
+        
+        function generateRandomParams() {
+            const isBrush = !!brushImg;
+            if (isBrush) {
+                return {
+                    type: 'brush',
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    scale: Math.random() * 0.15 + 0.05,
+                    rotation: Math.random() * Math.PI * 2
+                };
+            } else {
+                // Default to rectangle
+                const x = Math.random() * width;
+                const y = Math.random() * height;
+                const w = (Math.random() * 0.2 + 0.05) * width;
+                const h = (Math.random() * 0.2 + 0.05) * height;
+                return {
+                    type: 'rect',
+                    x,
+                    y,
+                    w,
+                    h
+                };
+            }
+        }
+        
+        function mutateParams(params) {
+            const mutated = {...params};
+            const delta = 0.05; // Relative mutation
+            mutated.x += (Math.random() - 0.5) * width * delta;
+            mutated.y += (Math.random() - 0.5) * height * delta;
+            mutated.x = Math.max(0, Math.min(width, mutated.x));
+            mutated.y = Math.max(0, Math.min(height, mutated.y));
+            if (params.type === 'brush') {
+                mutated.scale += (Math.random() - 0.5) * mutated.scale * delta * 2;
+                mutated.scale = Math.max(0.01, Math.min(1, mutated.scale));
+                mutated.rotation += (Math.random() - 0.5) * Math.PI * delta * 4;
+            } else if (params.type === 'rect') {
+                mutated.w += (Math.random() - 0.5) * mutated.w * delta * 2;
+                mutated.h += (Math.random() - 0.5) * mutated.h * delta * 2;
+                mutated.w = Math.max(5, Math.min(width, mutated.w));
+                mutated.h = Math.max(5, Math.min(height, mutated.h));
+            }
+            return mutated;
+        }
+        
+        function computeImprovement(params, currentData, opacity) {
+            const maskData = getMaskData(params, opacity);
+            if (!maskData) return 0;
+            const target = targetImageData.data;
+            const current = currentData.data;
+            let sumNumR = 0, sumNumG = 0, sumNumB = 0;
+            let sumDen = 0;
+            for (let i = 0; i < maskData.data.length; i += 4) {
+                const maskAlpha = maskData.data[i + 3] / 255;
+                if (maskAlpha > 0) {
+                    sumNumR += (target[i] - current[i]) * maskAlpha;
+                    sumNumG += (target[i + 1] - current[i + 1]) * maskAlpha;
+                    sumNumB += (target[i + 2] - current[i + 2]) * maskAlpha;
+                    sumDen += maskAlpha * maskAlpha;
+                }
+            }
+            if (sumDen === 0) return 0;
+            return (sumNumR * sumNumR + sumNumG * sumNumG + sumNumB * sumNumB) / sumDen;
+        }
+        
+        function computeOptimalColor(params, currentData, opacity) {
+            const maskData = getMaskData(params, opacity);
+            if (!maskData) return {r: 0, g: 0, b: 0};
+            const target = targetImageData.data;
+            const current = currentData.data;
+            let sumNumR = 0, sumNumG = 0, sumNumB = 0;
+            let sumDen = 0;
+            for (let i = 0; i < maskData.data.length; i += 4) {
+                const maskAlpha = maskData.data[i + 3] / 255;
+                if (maskAlpha > 0) {
+                    sumNumR += (target[i] - current[i]) * maskAlpha;
+                    sumNumG += (target[i + 1] - current[i + 1]) * maskAlpha;
+                    sumNumB += (target[i + 2] - current[i + 2]) * maskAlpha;
+                    sumDen += maskAlpha * maskAlpha;
+                }
+            }
+            if (sumDen === 0) return {r: 0, g: 0, b: 0};
+            return {
+                r: Math.max(0, Math.min(255, Math.round(sumNumR / sumDen))),
+                g: Math.max(0, Math.min(255, Math.round(sumNumG / sumDen))),
+                b: Math.max(0, Math.min(255, Math.round(sumNumB / sumDen)))
+            };
+        }
+        
+        function getMaskData(params, opacity) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.clearRect(0, 0, width, height);
+            
+            if (params.type === 'brush' && brushImg) {
+                tempCtx.save();
+                tempCtx.translate(params.x, params.y);
+                tempCtx.rotate(params.rotation);
+                tempCtx.drawImage(brushImg, -brushImg.width * params.scale / 2, -brushImg.height * params.scale / 2, brushImg.width * params.scale, brushImg.height * params.scale);
+                tempCtx.restore();
+            } else if (params.type === 'rect') {
+                tempCtx.fillStyle = `rgba(255, 255, 255, ${opacity / 255})`;
+                tempCtx.fillRect(params.x, params.y, params.w, params.h);
+            } else {
+                return null;
+            }
+            return tempCtx.getImageData(0, 0, width, height);
+        }
+        
+        function applyShape(params, color, opacity) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.clearRect(0, 0, width, height);
+            
+            if (params.type === 'brush' && brushImg) {
+                tempCtx.save();
+                tempCtx.translate(params.x, params.y);
+                tempCtx.rotate(params.rotation);
+                tempCtx.drawImage(brushImg, -brushImg.width * params.scale / 2, -brushImg.height * params.scale / 2, brushImg.width * params.scale, brushImg.height * params.scale);
+                tempCtx.restore();
+                tempCtx.globalCompositeOperation = 'source-in';
+                tempCtx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+                tempCtx.fillRect(0, 0, width, height);
+            } else if (params.type === 'rect') {
+                tempCtx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+                tempCtx.globalAlpha = opacity / 255;
+                tempCtx.fillRect(params.x, params.y, params.w, params.h);
+            }
+            
+            currentCtx.drawImage(tempCanvas, 0, 0);
+        }
+    </script>
 </body>
 </html>
