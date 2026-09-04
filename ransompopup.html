@@ -1,0 +1,48 @@
+<head>
+<title>RANS0M</title>
+ <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Fullscreen Image</title>
+    <style>
+        /* Remove margins and hide scrollbars for a true fullscreen look */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000; /* Black background while loading */
+        }
+
+        /* Style the image container to fill the screen */
+        .fullscreen-bg {
+            width: 100%;
+            height: 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover; /* Change to 'contain' if you don't want cropping */
+        }
+    </style>
+</head>
+<body>
+  <!-- This div will hold our background image -->
+    <div id="image-container" class="fullscreen-bg"></div>
+
+    <script>
+        // 1. Add your image URLs inside this array (comma-separated quotes)
+        const imageUrls = [
+            "https://picsum.photos",
+            "https://picsum.photos",
+            "https://picsum.photos",
+            "https://picsum.photos"
+        ];
+
+        // 2. Pick a random index from the array
+        const randomIndex = Math.floor(Math.random() * imageUrls.length);
+        const selectedImage = imageUrls[randomIndex];
+
+        // 3. Apply the selected image as a CSS background property
+        document.getElementById('image-container').style.backgroundImage = `url('${selectedImage}')`;
+    </script>
+
+</body>
