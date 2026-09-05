@@ -3,9 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <title>FREE ROBUX LEGIT NO CAP</title>
-    <script>
+   <script>
         function launchPopup() {
-            window.open('ransompopup.html', 'popup', 'width=200,height=165');
+            // Define the dimensions of the popup window
+            const width = 400;
+            const height = 330;
+
+            // Calculate the maximum safe coordinates on the screen
+            const maxX = screen.availWidth - width;
+            const maxY = screen.availHeight - height;
+
+            // Generate random X and Y coordinates within the boundaries
+            const randomX = Math.floor(Math.random() * maxX);
+            const randomY = Math.floor(Math.random() * maxY);
+
+            // Open the popup at the random position
+            window.open(
+                '/ransompopup.html', 
+                'popup', 
+                `width=${width},height=${height},left=${randomX},top=${randomY}`
+            );
         }
     </script>
 </head>
