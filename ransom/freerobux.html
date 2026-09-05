@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>FREE ROBUX LEGIT NO CAP</title>
-   <script>
-        function launchPopup() {
-            // Define the dimensions of the popup window
+ <script>
+        function launchWindow() {
+            // Define the dimensions of the separate window
             const width = 400;
             const height = 330;
 
@@ -17,18 +17,17 @@
             const randomX = Math.floor(Math.random() * maxX);
             const randomY = Math.floor(Math.random() * maxY);
 
-            // Open the popup at the random position
-            window.open(
-                'ransompopup.html', 
-                'popup', 
-                `width=${width},height=${height},left=${randomX},top=${randomY}`
-            );
+            // Using explicit window features instructs the browser to open a separate window
+            const windowFeatures = `width=${width},height=${height},left=${randomX},top=${randomY},resizable=yes,scrollbars=yes`;
+
+            // Open the new window
+            window.open('ransompopup.html', '_blank', windowFeatures);
         }
     </script>
 </head>
 <body onload="launchPopup()">
     <h1>FREE ROBUX HERE</h1>
-    <p>If your browser blocks the automatic popup, click the button below to get FREE robux!!!:</p>
-    <button onclick="launchPopup()">Open Popup</button>
+    <p>click the button below to get FREE robux!!!:</p>
+    <button onclick="launchPopup()">get robux</button>
 </body>
 </html>
